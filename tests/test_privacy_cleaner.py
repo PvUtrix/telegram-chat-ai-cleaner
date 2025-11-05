@@ -2,7 +2,6 @@
 Tests for privacy cleaner functionality
 """
 
-import pytest
 from src.tg_analyzer.processors.cleaners.privacy_cleaner import PrivacyCleaner
 from src.tg_analyzer.config.models import ChatInfo, Message
 from datetime import datetime

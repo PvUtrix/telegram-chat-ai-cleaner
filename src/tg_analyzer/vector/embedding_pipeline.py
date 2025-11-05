@@ -11,12 +11,7 @@ from enum import Enum
 from ..config.config_manager import ConfigManager
 from ..llm.llm_manager import LLMManager
 from .supabase_client import SupabaseClient
-from ..constants import (
-    MIN_WORD_BOUNDARY_RATIO,
-    DEFAULT_CHUNK_SIZE,
-    DEFAULT_CHUNK_OVERLAP,
-    CHARS_PER_TOKEN_ESTIMATE
-)
+from ..constants import MIN_WORD_BOUNDARY_RATIO, CHARS_PER_TOKEN_ESTIMATE
 
 
 logger = logging.getLogger(__name__)

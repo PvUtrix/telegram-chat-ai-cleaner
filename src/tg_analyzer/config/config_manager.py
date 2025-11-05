@@ -142,6 +142,11 @@ class ConfigManager:
         """
         Save current configuration to .env file
 
+        WARNING: This saves API keys and other sensitive data as plain text.
+        - Ensure file has restricted permissions (600)
+        - Never commit .env files to version control
+        - Use secrets management systems in production
+
         Args:
             env_path: Path to save .env file (optional)
         """
@@ -150,12 +155,33 @@ class ConfigManager:
         elif not env_path:
             env_path = ".env"
 
+        # Security warning
+        logger.warning(
+            "Saving sensitive data (API keys) to file. "
+            "Ensure file permissions are restricted and file is not committed to git."
+        )
+
         env_content = self._generate_env_content()
 
+        # Write with restricted permissions
+        import os
+        import stat
+
+        # Create/write file
         with open(env_path, 'w') as f:
             f.write(env_content)
 
-        logger.info(f"Configuration saved to: {env_path}")
+        # Set file permissions to 600 (owner read/write only) on Unix-like systems
+        try:
+            os.chmod(env_path, stat.S_IRUSR | stat.S_IWUSR)
+            logger.info(f"Configuration saved to: {env_path} (permissions: 600)")
+        except (OSError, AttributeError) as e:
+            # chmod may not work on Windows or with permission issues
+            logger.warning(
+                f"Could not set file permissions for {env_path}: {e}. "
+                "Please manually restrict file access."
+            )
+            logger.info(f"Configuration saved to: {env_path}")
 
     def _generate_env_content(self) -> str:
         """Generate .env file content from current settings"""

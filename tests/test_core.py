@@ -3,7 +3,6 @@ Tests for core TelegramAnalyzer functionality
 """
 
 import pytest
-from pathlib import Path
 from src.tg_analyzer.core import TelegramAnalyzer
 
 

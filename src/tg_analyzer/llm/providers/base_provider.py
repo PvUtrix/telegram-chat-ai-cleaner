@@ -5,7 +5,7 @@ Base LLM provider interface
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from ...config.models import LLMConfig
-from ...constants import CHARS_PER_TOKEN_ESTIMATE, MIN_WORD_BOUNDARY_RATIO
+from ...constants import CHARS_PER_TOKEN_ESTIMATE
 
 
 class BaseLLMProvider(ABC):
