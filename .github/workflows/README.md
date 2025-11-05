@@ -186,6 +186,37 @@ act pull_request  # Simulate PR event
 - **GITHUB_TOKEN**: Automatically provided, limited scope
 - **External Services**: Use with caution
 
+### Dependency Pinning Strategy
+
+**GitHub Actions**: All actions pinned to full SHA hashes (e.g., `actions/checkout@08eba0b...`)
+- Protects against supply chain attacks
+- Immutable references prevent malicious updates
+- Comments include version tags for maintainability
+
+**Direct pip Packages**: Pinned to specific versions (e.g., `pip install safety==3.6.2`)
+- Ensures reproducible builds
+- All versions explicitly specified
+- Prevents unexpected breaking changes
+
+**Transitive Dependencies** (via requirements.txt): Version-pinned but not hash-pinned
+- **Why**: Hash pinning requires `pip install --require-hashes` which needs hashes for ALL dependencies and sub-dependencies
+- **Trade-off**: Balance between security and maintainability
+- **Mitigation**:
+  - Safety and pip-audit scan for known vulnerabilities
+  - Regular dependency updates via Dependabot
+  - All direct dependencies version-pinned
+  - Using trusted PyPI sources
+- **Future**: Consider pip-compile with hash generation for production deployments
+- **Risk Level**: Medium (15 Scorecard warnings) - acceptable for development CI/CD
+
+**Rationale**: Full hash pinning would require:
+1. Generating hashes for 100+ transitive dependencies
+2. Updating hashes on every dependency change
+3. Manual hash verification process
+4. Breaking compatibility with standard requirements.txt
+
+For production deployments, consider using pip-compile or pip-tools to generate locked requirements with hashes.
+
 ## Monitoring
 
 Monitor workflow health:

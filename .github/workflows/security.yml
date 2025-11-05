@@ -9,8 +9,9 @@ on:
     # Run weekly on Monday at 00:00 UTC
     - cron: '0 0 * * 1'
 
-# Remove top-level permissions - set per job for least privilege
+# Restrictive top-level permissions - jobs override as needed
 # See: https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+permissions: {}
 
 jobs:
   dependency-scan:

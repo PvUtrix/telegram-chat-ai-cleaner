@@ -10,7 +10,8 @@ on:
   pull_request:
     branches: [ main, master ]
 
-# No top-level permissions - set per job for least privilege
+# Restrictive top-level permissions - jobs override as needed
+permissions: {}
 
 jobs:
   analysis:
