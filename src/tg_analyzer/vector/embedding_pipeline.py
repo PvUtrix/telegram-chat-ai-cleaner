@@ -11,6 +11,12 @@ from enum import Enum
 from ..config.config_manager import ConfigManager
 from ..llm.llm_manager import LLMManager
 from .supabase_client import SupabaseClient
+from ..constants import (
+    MIN_WORD_BOUNDARY_RATIO,
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+    CHARS_PER_TOKEN_ESTIMATE
+)
 
 
 logger = logging.getLogger(__name__)
@@ -109,7 +115,8 @@ class EmbeddingPipeline:
             # Try to break at word boundary
             if end_pos < len(text) and not text[end_pos].isspace():
                 last_space = chunk_text.rfind(' ')
-                if last_space > chunk_size // 2:  # Don't break too early
+                min_chunk_size = int(chunk_size * MIN_WORD_BOUNDARY_RATIO)  # Don't break too early
+                if last_space > min_chunk_size:
                     end_pos = start_pos + last_space
                     chunk_text = text[start_pos:end_pos]
 
@@ -140,7 +147,8 @@ class EmbeddingPipeline:
             # Try to break at word boundary
             if end_pos < len(text) and not text[end_pos].isspace():
                 last_space = chunk_text.rfind(' ')
-                if last_space > chunk_size // 2:
+                min_chunk_size = int(chunk_size * MIN_WORD_BOUNDARY_RATIO)
+                if last_space > min_chunk_size:
                     end_pos = start_pos + last_space
                     chunk_text = text[start_pos:end_pos]
 
@@ -299,13 +307,13 @@ class EmbeddingPipeline:
 
             try:
                 # Generate embeddings for batch
-                batch_vectors = await self.llm_manager.llm_manager._get_provider(provider).get_embeddings(
+                batch_vectors = await self.llm_manager._get_provider(provider).get_embeddings(
                     batch_texts, model=model
                 )
                 all_vectors.extend(batch_vectors)
 
                 # Estimate tokens (rough approximation)
-                batch_tokens = sum(len(text) // 4 for text in batch_texts)
+                batch_tokens = sum(len(text) // CHARS_PER_TOKEN_ESTIMATE for text in batch_texts)
                 total_tokens += batch_tokens
 
                 if progress_callback:
@@ -451,7 +459,7 @@ class EmbeddingPipeline:
         model = model or self.config.get('default_embedding_model', 'text-embedding-3-small')
 
         # Generate embedding for query
-        query_provider = self.llm_manager.llm_manager._get_provider(provider)
+        query_provider = self.llm_manager._get_provider(provider)
         query_embedding = await query_provider.get_embeddings([query], model=model)
         query_vector = query_embedding[0]
 

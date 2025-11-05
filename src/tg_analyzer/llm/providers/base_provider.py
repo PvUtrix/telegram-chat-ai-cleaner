@@ -5,6 +5,7 @@ Base LLM provider interface
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from ...config.models import LLMConfig
+from ...constants import CHARS_PER_TOKEN_ESTIMATE, MIN_WORD_BOUNDARY_RATIO
 
 
 class BaseLLMProvider(ABC):
@@ -120,8 +121,7 @@ class BaseLLMProvider(ABC):
 
         # Simple character-based truncation as fallback
         # Subclasses should implement proper token-based truncation
-        chars_per_token = 4  # Rough estimate
-        max_chars = max_tokens * chars_per_token
+        max_chars = max_tokens * CHARS_PER_TOKEN_ESTIMATE
 
         if len(text) <= max_chars:
             return text

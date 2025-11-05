@@ -90,23 +90,46 @@ class TelegramParser:
         return chat_info
 
     def _read_file_with_encoding(self, file_path: Path) -> str:
-        """Read file with automatic encoding detection"""
-        with open(file_path, 'rb') as f:
-            raw_data = f.read()
+        """Read file with automatic encoding detection
+
+        Raises:
+            IOError: If file cannot be read
+            ValueError: If no valid encoding can be found
+        """
+        try:
+            with open(file_path, 'rb') as f:
+                raw_data = f.read()
+        except IOError as e:
+            logger.error(f"Failed to read file {file_path}: {e}")
+            raise IOError(f"Cannot read file {file_path}: {str(e)}") from e
+
+        if not raw_data:
+            raise ValueError(f"File {file_path} is empty")
 
         # First try UTF-8 directly (most common for JSON files)
         try:
             return raw_data.decode('utf-8')
         except UnicodeDecodeError:
-            # If UTF-8 fails, try to detect encoding
-            detected = chardet.detect(raw_data)
-            encoding = detected.get('encoding', 'utf-8')
+            logger.warning(f"UTF-8 decode failed for {file_path}, trying to detect encoding")
 
-            # Try detected encoding
+            # If UTF-8 fails, try to detect encoding
             try:
+                detected = chardet.detect(raw_data)
+                encoding = detected.get('encoding', 'utf-8')
+                confidence = detected.get('confidence', 0)
+
+                logger.info(f"Detected encoding: {encoding} (confidence: {confidence})")
+
+                if confidence < 0.7:
+                    logger.warning(f"Low confidence ({confidence}) in detected encoding {encoding}")
+
+                # Try detected encoding
                 return raw_data.decode(encoding)
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, AttributeError, TypeError) as e:
+                logger.error(f"Failed to decode with detected encoding: {e}")
+
                 # Final fallback with error replacement
+                logger.warning("Using UTF-8 with error replacement as last resort")
                 return raw_data.decode('utf-8', errors='replace')
 
     def _is_valid_telegram_export(self, data: Dict[str, Any]) -> bool:

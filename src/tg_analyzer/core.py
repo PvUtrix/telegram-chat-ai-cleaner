@@ -47,21 +47,49 @@ class TelegramAnalyzer:
 
         Returns:
             Cleaned data as string
+
+        Raises:
+            FileNotFoundError: If input file doesn't exist
+            ValueError: If invalid approach, level, or format specified
+            Exception: For other processing errors
         """
-        # Parse the input file
-        data = self.parser.parse_file(input_file)
+        try:
+            # Validate inputs
+            from .constants import VALID_CLEANING_APPROACHES, VALID_CLEANING_LEVELS, VALID_OUTPUT_FORMATS
 
-        # Get the appropriate cleaner
-        cleaner = get_cleaner(approach, level)
+            if approach not in VALID_CLEANING_APPROACHES:
+                raise ValueError(f"Invalid approach: {approach}. Must be one of {VALID_CLEANING_APPROACHES}")
 
-        # Clean the data
-        cleaned_data = cleaner.clean(data)
+            if level not in VALID_CLEANING_LEVELS:
+                raise ValueError(f"Invalid level: {level}. Must be one of {VALID_CLEANING_LEVELS}")
 
-        # Format the output
-        formatter = get_formatter(output_format)
-        return formatter.format(cleaned_data)
+            if output_format not in VALID_OUTPUT_FORMATS:
+                raise ValueError(f"Invalid format: {output_format}. Must be one of {VALID_OUTPUT_FORMATS}")
 
-    def analyze(
+            # Parse the input file
+            data = self.parser.parse_file(input_file)
+
+            if not data or not data.messages:
+                raise ValueError(f"No messages found in {input_file}. File may be empty or invalid.")
+
+            # Get the appropriate cleaner
+            cleaner = get_cleaner(approach, level)
+
+            # Clean the data
+            cleaned_data = cleaner.clean(data)
+
+            # Format the output
+            formatter = get_formatter(output_format)
+            return formatter.format(cleaned_data)
+
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Input file not found: {input_file}") from e
+        except ValueError as e:
+            raise ValueError(f"Validation error: {str(e)}") from e
+        except Exception as e:
+            raise Exception(f"Failed to clean file {input_file}: {str(e)}") from e
+
+    async def analyze(
         self,
         input_data: str,
         prompt: str,
@@ -81,14 +109,35 @@ class TelegramAnalyzer:
 
         Returns:
             LLM analysis result
+
+        Raises:
+            ValueError: If inputs are invalid or API key is missing
+            Exception: For LLM API errors
         """
-        return self.llm_manager.analyze(
-            input_data=input_data,
-            prompt=prompt,
-            provider=provider,
-            model=model,
-            **kwargs
-        )
+        try:
+            if not input_data or not input_data.strip():
+                raise ValueError("Input data cannot be empty")
+
+            if not prompt or not prompt.strip():
+                raise ValueError("Prompt cannot be empty")
+
+            # Validate provider if specified
+            if provider:
+                from .constants import VALID_LLM_PROVIDERS
+                if provider not in VALID_LLM_PROVIDERS:
+                    raise ValueError(f"Invalid provider: {provider}. Must be one of {VALID_LLM_PROVIDERS}")
+
+            return await self.llm_manager.analyze(
+                input_data=input_data,
+                prompt=prompt,
+                provider=provider,
+                model=model,
+                **kwargs
+            )
+        except ValueError as e:
+            raise ValueError(f"Analysis validation error: {str(e)}") from e
+        except Exception as e:
+            raise Exception(f"LLM analysis failed: {str(e)}") from e
 
     async def vectorize(
         self,

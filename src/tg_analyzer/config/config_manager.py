@@ -64,6 +64,7 @@ class ConfigManager:
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             groq_api_key=os.getenv("GROQ_API_KEY"),
+            openrouter_api_key=os.getenv("OPENROUTER_API_KEY"),
 
             # Ollama settings
             ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
@@ -98,6 +99,7 @@ class ConfigManager:
             web_host=os.getenv("WEB_HOST", "0.0.0.0"),
             web_port=int(os.getenv("WEB_PORT", "8000")),
             enable_cors=os.getenv("ENABLE_CORS", "true").lower() == "true",
+            cors_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000"),
 
             # Logging
             log_level=os.getenv("LOG_LEVEL", "INFO"),
@@ -188,6 +190,11 @@ class ConfigManager:
         else:
             lines.append("# GROQ_API_KEY=gsk_your-groq-api-key-here")
 
+        if self._settings.openrouter_api_key:
+            lines.append(f"OPENROUTER_API_KEY={self._settings.openrouter_api_key}")
+        else:
+            lines.append("# OPENROUTER_API_KEY=sk-or-your-openrouter-api-key-here")
+
         lines.extend([
             "",
             "# Ollama Configuration (for local models)",
@@ -254,6 +261,7 @@ class ConfigManager:
             f"WEB_HOST={self._settings.web_host}",
             f"WEB_PORT={self._settings.web_port}",
             f"ENABLE_CORS={str(self._settings.enable_cors).lower()}",
+            f"CORS_ORIGINS={self._settings.cors_origins}",
             "",
             "# ======================================",
             "# Logging Configuration",
@@ -286,7 +294,8 @@ class ConfigManager:
             self._settings.openai_api_key,
             self._settings.anthropic_api_key,
             self._settings.google_api_key,
-            self._settings.groq_api_key
+            self._settings.groq_api_key,
+            self._settings.openrouter_api_key
         ]):
             issues["llm"] = "No LLM API key configured. Analysis features will not work."
 
