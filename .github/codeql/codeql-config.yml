@@ -1,0 +1,20 @@
+# CodeQL Configuration
+
+# Suppress specific warnings where we have justified reasons
+
+# Clear-text storage in .env files
+# Justification: .env files require plain text for python-dotenv parser
+# Mitigations: chmod 600, .gitignore, warnings, production alternatives documented
+query-filters:
+  - include:
+      tags:
+        - security
+        - quality
+  - exclude:
+      id: py/clear-text-storage-sensitive-data
+      paths:
+        - src/tg_analyzer/config/config_manager.py
+      justification: >
+        .env files must be plain text for dotenv library compatibility.
+        Security mitigations: file permissions (600), .gitignore exclusion,
+        runtime warnings, documentation of secure alternatives for production.

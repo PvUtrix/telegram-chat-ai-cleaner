@@ -142,13 +142,32 @@ class ConfigManager:
         """
         Save current configuration to .env file
 
-        WARNING: This saves API keys and other sensitive data as plain text.
-        - Ensure file has restricted permissions (600)
-        - Never commit .env files to version control
-        - Use secrets management systems in production
+        ⚠️  SECURITY WARNING: This saves API keys as plain text on disk.
+
+        Why plain text is necessary:
+        - .env files must be plain text for python-dotenv to parse
+        - Standard pattern for local development configuration
+        - Required for environment variable loading
+
+        Security mitigations in place:
+        - File permissions automatically set to 600 (owner read/write only)
+        - .gitignore prevents accidental commits
+        - Runtime warnings logged
+        - Comprehensive security documentation
+
+        For production environments, use:
+        - AWS Secrets Manager
+        - Azure Key Vault
+        - HashiCorp Vault
+        - Google Secret Manager
+        - Kubernetes Secrets
+        - Environment variables from secure sources
 
         Args:
             env_path: Path to save .env file (optional)
+
+        Raises:
+            OSError: If file cannot be written
         """
         if not env_path and self.config_path:
             env_path = str(self.config_path)
@@ -168,8 +187,14 @@ class ConfigManager:
         import stat
 
         # Create/write file
+        # LGTM[py/clear-text-storage-sensitive-data]
+        # Justification: .env files require plain text for dotenv to parse.
+        # Mitigations: 1) File permissions set to 600 (owner only)
+        #              2) .gitignore prevents commit
+        #              3) Users warned in logs and docs
+        #              4) Production should use secrets management (AWS Secrets Manager, etc.)
         with open(env_path, 'w') as f:
-            f.write(env_content)
+            f.write(env_content)  # lgtm[py/clear-text-storage-sensitive-data]
 
         # Set file permissions to 600 (owner read/write only) on Unix-like systems
         try:
