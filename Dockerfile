@@ -26,7 +26,7 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Copy package files and source code
-COPY setup.py pyproject.toml ./
+COPY setup.py pyproject.toml README.md ./
 COPY src/ ./src/
 
 # Install LOCAL package in editable mode
@@ -64,7 +64,7 @@ RUN useradd --create-home --shell /bin/bash tguser && \
 WORKDIR /app
 
 # Copy package files and source code
-COPY --chown=tguser:tguser setup.py pyproject.toml ./
+COPY --chown=tguser:tguser setup.py pyproject.toml README.md ./
 COPY --chown=tguser:tguser src/ ./src/
 
 # Install LOCAL package in editable mode
