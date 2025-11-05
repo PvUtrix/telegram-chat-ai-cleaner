@@ -88,6 +88,7 @@ class ConfigSettings(BaseModel):
     anthropic_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
 
     # Ollama settings
     ollama_base_url: str = "http://localhost:11434"
@@ -122,6 +123,7 @@ class ConfigSettings(BaseModel):
     web_host: str = "0.0.0.0"
     web_port: int = 8000
     enable_cors: bool = True
+    cors_origins: str = "http://localhost:3000,http://localhost:8000"  # Comma-separated list
 
     # Logging
     log_level: str = "INFO"

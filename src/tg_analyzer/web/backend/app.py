@@ -61,10 +61,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware with configurable origins
+cors_origins = config.get('cors_origins', 'http://localhost:3000,http://localhost:8000').split(',') if config else ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=[origin.strip() for origin in cors_origins],  # Configurable from environment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -170,7 +171,32 @@ async def upload_file(
     try:
         # Read file content
         content = await file.read()
-        json_data = content.decode('utf-8')
+
+        # Check file size
+        max_size = config.get('max_file_size_mb', 100) * 1024 * 1024
+        if len(content) > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size is {config.get('max_file_size_mb', 100)}MB"
+            )
+
+        # Decode and validate JSON structure
+        try:
+            json_data = content.decode('utf-8')
+            import json as json_lib
+            parsed_json = json_lib.loads(json_data)
+
+            # Basic Telegram export validation
+            if not isinstance(parsed_json, dict):
+                raise HTTPException(status_code=400, detail="Invalid JSON structure: must be an object")
+
+            if 'messages' not in parsed_json:
+                raise HTTPException(status_code=400, detail="Invalid Telegram export: missing 'messages' field")
+
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="File encoding error: file must be UTF-8")
+        except json_lib.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(e)}")
 
         # Save to input directory
         input_path = file_manager.get_input_dir() / file.filename
@@ -180,7 +206,8 @@ async def upload_file(
         result = {
             "filename": file.filename,
             "saved_to": str(input_path),
-            "file_size": len(content)
+            "file_size": len(content),
+            "message_count": len(parsed_json.get('messages', []))
         }
 
         # Optionally start cleaning process
@@ -194,8 +221,10 @@ async def upload_file(
 
         return result
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Upload failed: {e}")
+        logger.error(f"Upload failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 

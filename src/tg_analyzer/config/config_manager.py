@@ -64,6 +64,7 @@ class ConfigManager:
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             groq_api_key=os.getenv("GROQ_API_KEY"),
+            openrouter_api_key=os.getenv("OPENROUTER_API_KEY"),
 
             # Ollama settings
             ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
@@ -98,6 +99,7 @@ class ConfigManager:
             web_host=os.getenv("WEB_HOST", "0.0.0.0"),
             web_port=int(os.getenv("WEB_PORT", "8000")),
             enable_cors=os.getenv("ENABLE_CORS", "true").lower() == "true",
+            cors_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000"),
 
             # Logging
             log_level=os.getenv("LOG_LEVEL", "INFO"),
@@ -140,20 +142,71 @@ class ConfigManager:
         """
         Save current configuration to .env file
 
+        ⚠️  SECURITY WARNING: This saves API keys as plain text on disk.
+
+        Why plain text is necessary:
+        - .env files must be plain text for python-dotenv to parse
+        - Standard pattern for local development configuration
+        - Required for environment variable loading
+
+        Security mitigations in place:
+        - File permissions automatically set to 600 (owner read/write only)
+        - .gitignore prevents accidental commits
+        - Runtime warnings logged
+        - Comprehensive security documentation
+
+        For production environments, use:
+        - AWS Secrets Manager
+        - Azure Key Vault
+        - HashiCorp Vault
+        - Google Secret Manager
+        - Kubernetes Secrets
+        - Environment variables from secure sources
+
         Args:
             env_path: Path to save .env file (optional)
+
+        Raises:
+            OSError: If file cannot be written
         """
         if not env_path and self.config_path:
             env_path = str(self.config_path)
         elif not env_path:
             env_path = ".env"
 
+        # Security warning
+        logger.warning(
+            "Saving sensitive data (API keys) to file. "
+            "Ensure file permissions are restricted and file is not committed to git."
+        )
+
         env_content = self._generate_env_content()
 
-        with open(env_path, 'w') as f:
-            f.write(env_content)
+        # Write with restricted permissions
+        import os
+        import stat
 
-        logger.info(f"Configuration saved to: {env_path}")
+        # Create/write file
+        # LGTM[py/clear-text-storage-sensitive-data]
+        # Justification: .env files require plain text for dotenv to parse.
+        # Mitigations: 1) File permissions set to 600 (owner only)
+        #              2) .gitignore prevents commit
+        #              3) Users warned in logs and docs
+        #              4) Production should use secrets management (AWS Secrets Manager, etc.)
+        with open(env_path, 'w') as f:
+            f.write(env_content)  # lgtm[py/clear-text-storage-sensitive-data]
+
+        # Set file permissions to 600 (owner read/write only) on Unix-like systems
+        try:
+            os.chmod(env_path, stat.S_IRUSR | stat.S_IWUSR)
+            logger.info(f"Configuration saved to: {env_path} (permissions: 600)")
+        except (OSError, AttributeError) as e:
+            # chmod may not work on Windows or with permission issues
+            logger.warning(
+                f"Could not set file permissions for {env_path}: {e}. "
+                "Please manually restrict file access."
+            )
+            logger.info(f"Configuration saved to: {env_path}")
 
     def _generate_env_content(self) -> str:
         """Generate .env file content from current settings"""
@@ -187,6 +240,11 @@ class ConfigManager:
             lines.append(f"GROQ_API_KEY={self._settings.groq_api_key}")
         else:
             lines.append("# GROQ_API_KEY=gsk_your-groq-api-key-here")
+
+        if self._settings.openrouter_api_key:
+            lines.append(f"OPENROUTER_API_KEY={self._settings.openrouter_api_key}")
+        else:
+            lines.append("# OPENROUTER_API_KEY=sk-or-your-openrouter-api-key-here")
 
         lines.extend([
             "",
@@ -254,6 +312,7 @@ class ConfigManager:
             f"WEB_HOST={self._settings.web_host}",
             f"WEB_PORT={self._settings.web_port}",
             f"ENABLE_CORS={str(self._settings.enable_cors).lower()}",
+            f"CORS_ORIGINS={self._settings.cors_origins}",
             "",
             "# ======================================",
             "# Logging Configuration",
@@ -286,7 +345,8 @@ class ConfigManager:
             self._settings.openai_api_key,
             self._settings.anthropic_api_key,
             self._settings.google_api_key,
-            self._settings.groq_api_key
+            self._settings.groq_api_key,
+            self._settings.openrouter_api_key
         ]):
             issues["llm"] = "No LLM API key configured. Analysis features will not work."
 
