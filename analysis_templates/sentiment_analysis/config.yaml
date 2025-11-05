@@ -1,0 +1,12 @@
+name: sentiment_analysis
+description: Analyze emotional tone and sentiment shifts in the chat
+version: "1.0.0"
+author: "Telegram Chat Analyzer"
+tags: ["sentiment", "emotion", "psychology", "group_dynamics"]
+
+# LLM Configuration for this template
+llm_config:
+  model: "anthropic/claude-3-sonnet"  # Best for sentiment analysis
+  temperature: 0.5  # More consistent for sentiment
+  max_tokens: 4000
+  provider: "openrouter"

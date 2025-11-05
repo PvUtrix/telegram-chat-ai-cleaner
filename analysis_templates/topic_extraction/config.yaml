@@ -1,0 +1,12 @@
+name: topic_extraction
+description: Extract and categorize main discussion topics
+version: "1.0.0"
+author: "Telegram Chat Analyzer"
+tags: ["topics", "categorization", "content", "organization"]
+
+# LLM Configuration for this template
+llm_config:
+  model: "openai/gpt-4"  # Good for topic extraction
+  temperature: 0.3  # Lower for more consistent categorization
+  max_tokens: 4000
+  provider: "openrouter"

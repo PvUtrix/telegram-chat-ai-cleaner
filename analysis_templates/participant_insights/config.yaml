@@ -1,0 +1,12 @@
+name: participant_insights
+description: Profile key participants and their roles in the conversation
+version: "1.0.0"
+author: "Telegram Chat Analyzer"
+tags: ["participants", "roles", "social_dynamics", "leadership"]
+
+# LLM Configuration for this template
+llm_config:
+  model: "anthropic/claude-3-sonnet"  # Good for social analysis
+  temperature: 0.6  # Balanced for personality insights
+  max_tokens: 4000
+  provider: "openrouter"

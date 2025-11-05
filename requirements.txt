@@ -1,0 +1,43 @@
+# Core dependencies
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+click>=8.0.0
+rich>=13.0.0
+typer>=0.9.0
+
+# LLM Providers
+openai>=1.0.0
+anthropic>=0.7.0
+google-generativeai>=0.3.0
+groq>=0.4.0
+
+# Vector Database
+supabase>=2.0.0
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+chardet>=5.0.0
+
+# Development & Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Optional: Local LLM support
+ollama>=0.1.0
+
+# Optional: For advanced features
+watchdog>=3.0.0  # For file watching
+psutil>=5.9.0    # System monitoring
+python-dateutil>=2.8.0
+tiktoken>=0.5.0  # For OpenAI token counting
+aiohttp>=3.8.0   # For Ollama HTTP requests
+

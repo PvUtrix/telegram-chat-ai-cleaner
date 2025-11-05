@@ -1,0 +1,12 @@
+name: timeline_summary
+description: Create chronological summary of key events and developments
+version: "1.0.0"
+author: "Telegram Chat Analyzer"
+tags: ["timeline", "chronology", "events", "summary"]
+
+# LLM Configuration for this template
+llm_config:
+  model: "openai/gpt-4"  # Good for chronological analysis
+  temperature: 0.4  # Lower for more factual timeline
+  max_tokens: 4000
+  provider: "openrouter"
