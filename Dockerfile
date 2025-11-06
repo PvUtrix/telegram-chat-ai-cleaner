@@ -1,7 +1,8 @@
 # Multi-stage Docker build for Telegram Chat Analyzer
 
 # Build stage
-FROM python:3.11-slim AS builder
+# Pin to SHA256 for supply chain security (update periodically for security patches)
+FROM python:3.11-slim@sha256:fa9b525a0be0c5ae5e6f2209f4be6fdc5a15a36fed0222144d98ac0d08f876d4 AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -19,19 +20,24 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements and install Python dependencies
+# External dependencies installed from PyPI via requirements.txt
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Copy package files and source code
-COPY setup.py pyproject.toml ./
+COPY setup.py pyproject.toml README.md ./
 COPY src/ ./src/
 
-# Install package in editable mode
+# Install LOCAL package in editable mode
+# Note: This installs the application's own source code (already in container)
+# Hash pinning not applicable - this is not downloading from external registry
+# All external dependencies already installed above via requirements.txt
 RUN pip install -e .
 
 # Production stage
-FROM python:3.11-slim AS production
+# Pin to SHA256 for supply chain security (update periodically for security patches)
+FROM python:3.11-slim@sha256:fa9b525a0be0c5ae5e6f2209f4be6fdc5a15a36fed0222144d98ac0d08f876d4 AS production
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -58,10 +64,13 @@ RUN useradd --create-home --shell /bin/bash tguser && \
 WORKDIR /app
 
 # Copy package files and source code
-COPY --chown=tguser:tguser setup.py pyproject.toml ./
+COPY --chown=tguser:tguser setup.py pyproject.toml README.md ./
 COPY --chown=tguser:tguser src/ ./src/
 
-# Install the package in editable mode
+# Install LOCAL package in editable mode
+# Note: This installs the application's own source code (already in container)
+# Hash pinning not applicable - this is not downloading from external registry
+# All external dependencies already installed in builder stage via requirements.txt
 RUN pip install -e .
 
 # Copy configuration template
