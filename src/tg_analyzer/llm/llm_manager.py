@@ -118,7 +118,7 @@ class LLMManager:
         prompt: Optional[str] = None,
         provider: Optional[str] = None,
         model: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Generate analysis using LLM
@@ -158,7 +158,7 @@ class LLMManager:
         prompt: Optional[str] = None,
         provider: Optional[str] = None,
         model: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
         Generate analysis with streaming
@@ -193,7 +193,7 @@ class LLMManager:
         prompt: str,
         provider: Optional[str] = None,
         model: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Analyze chat data with custom prompt
@@ -216,10 +216,12 @@ class LLMManager:
             prompt=None,  # Already included in input_data
             provider=provider,
             model=model,
-            **kwargs
+            **kwargs,
         )
 
-    def _prepare_prompt(self, input_data: str, custom_prompt: Optional[str] = None) -> str:
+    def _prepare_prompt(
+        self, input_data: str, custom_prompt: Optional[str] = None
+    ) -> str:
         """Prepare the full prompt for LLM"""
         if custom_prompt:
             return f"{custom_prompt}\n\nData to analyze:\n{input_data}"
@@ -265,7 +267,9 @@ Chat data:
             "current_model": provider_instance.config.model,
         }
 
-    def estimate_cost(self, text: str, provider: Optional[str] = None) -> Dict[str, Any]:
+    def estimate_cost(
+        self, text: str, provider: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Estimate cost for processing text
 
@@ -294,11 +298,10 @@ Chat data:
     async def close(self):
         """Close all provider connections"""
         for provider in self._providers.values():
-            if hasattr(provider, 'close'):
+            if hasattr(provider, "close"):
                 try:
                     await provider.close()
                 except Exception as e:
                     logger.warning(f"Error closing provider: {e}")
 
         self._providers.clear()
-

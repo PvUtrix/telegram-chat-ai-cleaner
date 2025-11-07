@@ -30,7 +30,7 @@ class TelegramParser:
             "audio_file",
             "document",
             "sticker",
-            "animation"
+            "animation",
         }
 
     def parse_file(self, file_path: Union[str, Path]) -> ChatInfo:
@@ -77,7 +77,7 @@ class TelegramParser:
             type=data.get("type", "unknown"),
             id=str(data.get("id", 0)),
             messages=[],
-            source_file=source_file
+            source_file=source_file,
         )
 
         messages_data = data.get("messages", [])
@@ -97,7 +97,7 @@ class TelegramParser:
             ValueError: If no valid encoding can be found
         """
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 raw_data = f.read()
         except IOError as e:
             logger.error(f"Failed to read file {file_path}: {e}")
@@ -108,20 +108,24 @@ class TelegramParser:
 
         # First try UTF-8 directly (most common for JSON files)
         try:
-            return raw_data.decode('utf-8')
+            return raw_data.decode("utf-8")
         except UnicodeDecodeError:
-            logger.warning(f"UTF-8 decode failed for {file_path}, trying to detect encoding")
+            logger.warning(
+                f"UTF-8 decode failed for {file_path}, trying to detect encoding"
+            )
 
             # If UTF-8 fails, try to detect encoding
             try:
                 detected = chardet.detect(raw_data)
-                encoding = detected.get('encoding', 'utf-8')
-                confidence = detected.get('confidence', 0)
+                encoding = detected.get("encoding", "utf-8")
+                confidence = detected.get("confidence", 0)
 
                 logger.info(f"Detected encoding: {encoding} (confidence: {confidence})")
 
                 if confidence < 0.7:
-                    logger.warning(f"Low confidence ({confidence}) in detected encoding {encoding}")
+                    logger.warning(
+                        f"Low confidence ({confidence}) in detected encoding {encoding}"
+                    )
 
                 # Try detected encoding
                 return raw_data.decode(encoding)
@@ -130,7 +134,7 @@ class TelegramParser:
 
                 # Final fallback with error replacement
                 logger.warning("Using UTF-8 with error replacement as last resort")
-                return raw_data.decode('utf-8', errors='replace')
+                return raw_data.decode("utf-8", errors="replace")
 
     def _is_valid_telegram_export(self, data: Dict[str, Any]) -> bool:
         """Check if data is a valid Telegram export"""
@@ -177,7 +181,9 @@ class TelegramParser:
                 from_id=msg_data.get("from_id"),
                 reply_to_message_id=msg_data.get("reply_to_message_id"),
                 text=self._parse_text(msg_data),
-                text_entities=self._parse_text_entities(msg_data.get("text_entities", [])),
+                text_entities=self._parse_text_entities(
+                    msg_data.get("text_entities", [])
+                ),
                 reactions=self._parse_reactions(msg_data.get("reactions", [])),
                 forwarded_from=msg_data.get("forwarded_from"),
                 via_bot=msg_data.get("via_bot"),
@@ -195,12 +201,18 @@ class TelegramParser:
                 contact_information=msg_data.get("contact_information"),
                 contact_vcard=msg_data.get("contact_vcard"),
                 location_information=msg_data.get("location_information"),
-                live_location_period_seconds=msg_data.get("live_location_period_seconds"),
-                live_location_last_update_date=self._parse_date(msg_data.get("live_location_last_update_date")),
-                live_location_last_update_date_unixtime=msg_data.get("live_location_last_update_date_unixtime"),
+                live_location_period_seconds=msg_data.get(
+                    "live_location_period_seconds"
+                ),
+                live_location_last_update_date=self._parse_date(
+                    msg_data.get("live_location_last_update_date")
+                ),
+                live_location_last_update_date_unixtime=msg_data.get(
+                    "live_location_last_update_date_unixtime"
+                ),
                 poll=msg_data.get("poll"),
                 performer=msg_data.get("performer"),
-                title=msg_data.get("title")
+                title=msg_data.get("title"),
             )
 
             return message
@@ -216,7 +228,7 @@ class TelegramParser:
 
         try:
             # Telegram format: "2025-08-22T00:48:13"
-            return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         except ValueError:
             logger.warning(f"Failed to parse date: {date_str}")
             return None
@@ -238,7 +250,9 @@ class TelegramParser:
 
         return str(text)
 
-    def _parse_text_entities(self, entities_data: List[Dict[str, Any]]) -> List[TextEntity]:
+    def _parse_text_entities(
+        self, entities_data: List[Dict[str, Any]]
+    ) -> List[TextEntity]:
         """Parse text entities (links, mentions, etc.)"""
         entities = []
 
@@ -248,7 +262,7 @@ class TelegramParser:
                     type=entity_data.get("type", "plain"),
                     text=entity_data.get("text", ""),
                     href=entity_data.get("href"),
-                    user_id=entity_data.get("user_id")
+                    user_id=entity_data.get("user_id"),
                 )
                 entities.append(entity)
             except Exception as e:
@@ -266,7 +280,9 @@ class TelegramParser:
                     type=reaction_data.get("type", "emoji"),
                     emoji=reaction_data.get("emoji"),
                     count=reaction_data.get("count", 0),
-                    recent=self._parse_recent_reactions(reaction_data.get("recent", []))
+                    recent=self._parse_recent_reactions(
+                        reaction_data.get("recent", [])
+                    ),
                 )
                 reactions.append(reaction)
             except Exception as e:
@@ -274,19 +290,22 @@ class TelegramParser:
 
         return reactions
 
-    def _parse_recent_reactions(self, recent_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _parse_recent_reactions(
+        self, recent_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Parse recent reaction data"""
         recent = []
 
         for recent_item in recent_data:
             try:
-                recent.append({
-                    "from": recent_item.get("from"),
-                    "from_id": recent_item.get("from_id"),
-                    "date": self._parse_date(recent_item.get("date"))
-                })
+                recent.append(
+                    {
+                        "from": recent_item.get("from"),
+                        "from_id": recent_item.get("from_id"),
+                        "date": self._parse_date(recent_item.get("date")),
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to parse recent reaction: {e}")
 
         return recent
-

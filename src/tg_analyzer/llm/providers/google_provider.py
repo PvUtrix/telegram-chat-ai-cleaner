@@ -3,7 +3,7 @@ Google Gemini provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import List, AsyncGenerator
 
 try:
     import google.generativeai as genai
@@ -37,7 +37,9 @@ class GoogleProvider(BaseLLMProvider):
         """Get or create Gemini model"""
         if self._model is None:
             if genai is None:
-                raise ImportError("google-generativeai package is required for Google provider")
+                raise ImportError(
+                    "google-generativeai package is required for Google provider"
+                )
 
             genai.configure(api_key=self.config.api_key)
             self._model = genai.GenerativeModel(self.config.model)
@@ -65,8 +67,7 @@ class GoogleProvider(BaseLLMProvider):
             )
 
             response = await model.generate_content_async(
-                prompt,
-                generation_config=generation_config
+                prompt, generation_config=generation_config
             )
 
             return response.text
@@ -95,9 +96,7 @@ class GoogleProvider(BaseLLMProvider):
             )
 
             response = await model.generate_content_async(
-                prompt,
-                generation_config=generation_config,
-                stream=True
+                prompt, generation_config=generation_config, stream=True
             )
 
             async for chunk in response:
@@ -131,22 +130,23 @@ class GoogleProvider(BaseLLMProvider):
             all_embeddings = []
 
             for i in range(0, len(texts), batch_size):
-                batch = texts[i:i + batch_size]
+                batch = texts[i : i + batch_size]
 
                 result = genai.embed_content(
-                    model=model_name,
-                    content=batch,
-                    task_type="retrieval_document"
+                    model=model_name, content=batch, task_type="retrieval_document"
                 )
 
                 # Handle both single and batch responses
-                if isinstance(result['embedding'], list) and len(result['embedding']) > 0:
-                    if isinstance(result['embedding'][0], list):
+                if (
+                    isinstance(result["embedding"], list)
+                    and len(result["embedding"]) > 0
+                ):
+                    if isinstance(result["embedding"][0], list):
                         # Batch response
-                        all_embeddings.extend(result['embedding'])
+                        all_embeddings.extend(result["embedding"])
                     else:
                         # Single response
-                        all_embeddings.append(result['embedding'])
+                        all_embeddings.append(result["embedding"])
 
             return all_embeddings
 

@@ -2,13 +2,20 @@
 FastAPI backend for Telegram Chat Analyzer
 """
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    HTTPException,
+    BackgroundTasks,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -58,14 +65,20 @@ app = FastAPI(
     title="Telegram Chat Analyzer API",
     description="API for cleaning, analyzing, and vectorizing Telegram chat exports",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware with configurable origins
-cors_origins = config.get('cors_origins', 'http://localhost:3000,http://localhost:8000').split(',') if config else ["*"]
+cors_origins = (
+    config.get("cors_origins", "http://localhost:3000,http://localhost:8000").split(",")
+    if config
+    else ["*"]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in cors_origins],  # Configurable from environment
+    allow_origins=[
+        origin.strip() for origin in cors_origins
+    ],  # Configurable from environment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,7 +111,9 @@ class SearchRequest(BaseModel):
     query: str = Field(..., description="Search query")
     limit: int = Field(10, description="Maximum results")
     provider: Optional[str] = Field(None, description="Embedding provider")
-    metadata_filter: Optional[Dict[str, Any]] = Field(None, description="Metadata filter")
+    metadata_filter: Optional[Dict[str, Any]] = Field(
+        None, description="Metadata filter"
+    )
 
 
 class ConfigUpdate(BaseModel):
@@ -144,7 +159,7 @@ async def root():
     return {
         "message": "Telegram Chat Analyzer API",
         "version": "0.1.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
 
 
@@ -154,7 +169,7 @@ async def health_check():
     return {
         "status": "healthy",
         "config_loaded": config is not None,
-        "analyzer_ready": analyzer is not None
+        "analyzer_ready": analyzer is not None,
     }
 
 
@@ -162,10 +177,10 @@ async def health_check():
 async def upload_file(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    clean_options: Optional[CleanRequest] = None
+    clean_options: Optional[CleanRequest] = None,
 ):
     """Upload and optionally process a Telegram JSON file"""
-    if not file.filename.endswith('.json'):
+    if not file.filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files are supported")
 
     try:
@@ -173,49 +188,57 @@ async def upload_file(
         content = await file.read()
 
         # Check file size
-        max_size = config.get('max_file_size_mb', 100) * 1024 * 1024
+        max_size = config.get("max_file_size_mb", 100) * 1024 * 1024
         if len(content) > max_size:
             raise HTTPException(
                 status_code=413,
-                detail=f"File too large. Maximum size is {config.get('max_file_size_mb', 100)}MB"
+                detail=f"File too large. Maximum size is {config.get('max_file_size_mb', 100)}MB",
             )
 
         # Decode and validate JSON structure
         try:
-            json_data = content.decode('utf-8')
+            json_data = content.decode("utf-8")
             import json as json_lib
+
             parsed_json = json_lib.loads(json_data)
 
             # Basic Telegram export validation
             if not isinstance(parsed_json, dict):
-                raise HTTPException(status_code=400, detail="Invalid JSON structure: must be an object")
+                raise HTTPException(
+                    status_code=400, detail="Invalid JSON structure: must be an object"
+                )
 
-            if 'messages' not in parsed_json:
-                raise HTTPException(status_code=400, detail="Invalid Telegram export: missing 'messages' field")
+            if "messages" not in parsed_json:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid Telegram export: missing 'messages' field",
+                )
 
         except UnicodeDecodeError:
-            raise HTTPException(status_code=400, detail="File encoding error: file must be UTF-8")
+            raise HTTPException(
+                status_code=400, detail="File encoding error: file must be UTF-8"
+            )
         except json_lib.JSONDecodeError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid JSON format: {str(e)}"
+            )
 
         # Save to input directory
         input_path = file_manager.get_input_dir() / file.filename
-        with open(input_path, 'w', encoding='utf-8') as f:
+        with open(input_path, "w", encoding="utf-8") as f:
             f.write(json_data)
 
         result = {
             "filename": file.filename,
             "saved_to": str(input_path),
             "file_size": len(content),
-            "message_count": len(parsed_json.get('messages', []))
+            "message_count": len(parsed_json.get("messages", [])),
         }
 
         # Optionally start cleaning process
         if clean_options:
             background_tasks.add_task(
-                process_file_background,
-                str(input_path),
-                clean_options.dict()
+                process_file_background, str(input_path), clean_options.dict()
             )
             result["processing_started"] = True
 
@@ -241,7 +264,7 @@ async def clean_file(filename: str, options: CleanRequest):
             input_file=str(input_path),
             approach=options.approach,
             level=options.level,
-            output_format=options.output_format
+            output_format=options.output_format,
         )
 
         # Generate output path and save
@@ -250,7 +273,7 @@ async def clean_file(filename: str, options: CleanRequest):
         )
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(cleaned_data)
 
         return {
@@ -259,7 +282,7 @@ async def clean_file(filename: str, options: CleanRequest):
             "approach": options.approach,
             "level": options.level,
             "format": options.output_format,
-            "size": len(cleaned_data)
+            "size": len(cleaned_data),
         }
 
     except Exception as e:
@@ -272,12 +295,15 @@ async def analyze_text(request: AnalyzeRequest):
     """Analyze text with LLM"""
     try:
         if not request.prompt and not request.template:
-            raise HTTPException(status_code=400, detail="Either prompt or template must be provided")
+            raise HTTPException(
+                status_code=400, detail="Either prompt or template must be provided"
+            )
 
         # Get prompt
         prompt = request.prompt
         if request.template:
             from ...llm.templates.default_prompts import get_prompt_template
+
             prompt = get_prompt_template(request.template)
 
         # For demo purposes, we'll analyze a simple text
@@ -288,14 +314,14 @@ async def analyze_text(request: AnalyzeRequest):
             input_data=demo_text,
             prompt=prompt,
             provider=request.provider,
-            model=request.model
+            model=request.model,
         )
 
         return {
             "result": result,
             "provider": request.provider or "default",
             "model": request.model or "default",
-            "length": len(result)
+            "length": len(result),
         }
 
     except Exception as e:
@@ -313,7 +339,7 @@ async def vectorize_file(filename: str, options: VectorizeRequest):
 
     try:
         # Read file content
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, "r", encoding="utf-8") as f:
             text_data = f.read()
 
         # Vectorize
@@ -322,7 +348,7 @@ async def vectorize_file(filename: str, options: VectorizeRequest):
             provider=options.provider,
             model=options.model,
             metadata={"source_file": filename},
-            chunking_strategy=options.chunk_strategy
+            chunking_strategy=options.chunk_strategy,
         )
 
         return result
@@ -340,14 +366,10 @@ async def search_vectors(request: SearchRequest):
             query=request.query,
             limit=request.limit,
             provider=request.provider,
-            metadata_filter=request.metadata_filter
+            metadata_filter=request.metadata_filter,
         )
 
-        return {
-            "query": request.query,
-            "results": results,
-            "count": len(results)
-        }
+        return {"query": request.query, "results": results, "count": len(results)}
 
     except Exception as e:
         logger.error(f"Search failed: {e}")
@@ -355,18 +377,14 @@ async def search_vectors(request: SearchRequest):
 
 
 @app.post("/batch-process")
-async def batch_process_files(background_tasks: BackgroundTasks, options: BatchProcessRequest):
+async def batch_process_files(
+    background_tasks: BackgroundTasks, options: BatchProcessRequest
+):
     """Process all files in input directory"""
     try:
-        background_tasks.add_task(
-            batch_process_background,
-            options.dict()
-        )
+        background_tasks.add_task(batch_process_background, options.dict())
 
-        return {
-            "message": "Batch processing started",
-            "options": options.dict()
-        }
+        return {"message": "Batch processing started", "options": options.dict()}
 
     except Exception as e:
         logger.error(f"Batch process failed: {e}")
@@ -383,12 +401,11 @@ async def list_files():
         # Get output files from all subdirectories
         for subdir in file_manager.get_output_dir().iterdir():
             if subdir.is_dir():
-                output_files.extend([f"{subdir.name}/{f.name}" for f in subdir.glob("*")])
+                output_files.extend(
+                    [f"{subdir.name}/{f.name}" for f in subdir.glob("*")]
+                )
 
-        return {
-            "input_files": input_files,
-            "output_files": output_files
-        }
+        return {"input_files": input_files, "output_files": output_files}
 
     except Exception as e:
         logger.error(f"Failed to list files: {e}")
@@ -404,7 +421,9 @@ async def get_config():
         # Remove sensitive information
         safe_config = {}
         for key, value in config_data.items():
-            if any(sensitive in key.lower() for sensitive in ['key', 'secret', 'password']):
+            if any(
+                sensitive in key.lower() for sensitive in ["key", "secret", "password"]
+            ):
                 safe_config[key] = "••••••••" if value else None
             else:
                 safe_config[key] = value
@@ -423,10 +442,7 @@ async def update_config(update: ConfigUpdate):
         config.set(update.key, update.value)
         config.save_to_env()
 
-        return {
-            "message": f"Configuration updated: {update.key}",
-            "key": update.key
-        }
+        return {"message": f"Configuration updated: {update.key}", "key": update.key}
 
     except Exception as e:
         logger.error(f"Config update failed: {e}")
@@ -451,17 +467,12 @@ async def websocket_endpoint(websocket: WebSocket):
 async def process_file_background(file_path: str, options: Dict[str, Any]):
     """Background task to process a single file"""
     try:
-        await manager.broadcast({
-            "type": "processing_started",
-            "file": file_path,
-            "options": options
-        })
+        await manager.broadcast(
+            {"type": "processing_started", "file": file_path, "options": options}
+        )
 
         # Process file
-        cleaned_data = analyzer.clean(
-            input_file=file_path,
-            **options
-        )
+        cleaned_data = analyzer.clean(input_file=file_path, **options)
 
         # Save result
         output_path = file_manager.generate_output_path(
@@ -469,66 +480,53 @@ async def process_file_background(file_path: str, options: Dict[str, Any]):
         )
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(cleaned_data)
 
-        await manager.broadcast({
-            "type": "processing_completed",
-            "file": file_path,
-            "output": output_path,
-            "size": len(cleaned_data)
-        })
+        await manager.broadcast(
+            {
+                "type": "processing_completed",
+                "file": file_path,
+                "output": output_path,
+                "size": len(cleaned_data),
+            }
+        )
 
     except Exception as e:
-        await manager.broadcast({
-            "type": "processing_failed",
-            "file": file_path,
-            "error": str(e)
-        })
+        await manager.broadcast(
+            {"type": "processing_failed", "file": file_path, "error": str(e)}
+        )
 
 
 async def batch_process_background(options: Dict[str, Any]):
     """Background task for batch processing"""
     try:
-        await manager.broadcast({
-            "type": "batch_started",
-            "options": options
-        })
+        await manager.broadcast({"type": "batch_started", "options": options})
 
         # Process all files
         results = batch_processor.process_directory(
             input_dir=file_manager.get_input_dir(),
-            output_dir=file_manager.get_output_dir(options["approach"], options["level"]),
-            **options
+            output_dir=file_manager.get_output_dir(
+                options["approach"], options["level"]
+            ),
+            **options,
         )
 
-        await manager.broadcast({
-            "type": "batch_completed",
-            "results": results,
-            "total_files": len(results)
-        })
+        await manager.broadcast(
+            {"type": "batch_completed", "results": results, "total_files": len(results)}
+        )
 
     except Exception as e:
-        await manager.broadcast({
-            "type": "batch_failed",
-            "error": str(e)
-        })
+        await manager.broadcast({"type": "batch_failed", "error": str(e)})
 
 
 # Error handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail}
-    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"Unhandled exception: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
-
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})

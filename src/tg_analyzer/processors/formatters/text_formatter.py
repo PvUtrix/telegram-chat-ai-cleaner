@@ -24,4 +24,3 @@ class TextFormatter(BaseFormatter):
         # Text formatter is essentially pass-through
         # The cleaned_data is already in the desired text format
         return cleaned_data.strip()
-

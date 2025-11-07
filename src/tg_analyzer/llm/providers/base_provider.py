@@ -3,7 +3,7 @@ Base LLM provider interface
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import Optional, List, AsyncGenerator
 from ...config.models import LLMConfig
 from ...constants import CHARS_PER_TOKEN_ESTIMATE
 
@@ -126,4 +126,4 @@ class BaseLLMProvider(ABC):
         if len(text) <= max_chars:
             return text
 
-        return text[:max_chars].rsplit(' ', 1)[0] + "..."
+        return text[:max_chars].rsplit(" ", 1)[0] + "..."

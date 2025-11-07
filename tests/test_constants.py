@@ -2,13 +2,13 @@
 Tests for application constants
 """
 
-from src.tg_analyzer.constants import (
+from tg_analyzer.constants import (
     VALID_CLEANING_APPROACHES,
     VALID_CLEANING_LEVELS,
     VALID_OUTPUT_FORMATS,
     VALID_LLM_PROVIDERS,
     MODEL_PRICING,
-    MODEL_CONTEXT_LENGTHS
+    MODEL_CONTEXT_LENGTHS,
 )
 
 

@@ -43,20 +43,16 @@ jobs:
 
       - name: Lint (ruff)
         run: ruff check src/ --output-format=github
-        continue-on-error: true
 
       - name: Format check (black)
         run: black --check src/
-        continue-on-error: true
 
       - name: Type check (mypy)
         run: mypy src/ --install-types --non-interactive --ignore-missing-imports
-        continue-on-error: true
+        continue-on-error: true  # Informational only - has pre-existing type errors
 
       - name: Tests (pytest)
-        run: |
-          pytest tests/test_constants.py -v || echo "Some tests may fail due to optional dependencies"
-        continue-on-error: true
+        run: pytest tests/test_constants.py -v
 
       - name: Build package metadata
         run: |

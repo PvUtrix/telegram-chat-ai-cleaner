@@ -5,12 +5,11 @@ Batch processing for multiple Telegram chat files
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..core import TelegramAnalyzer
 from ..config.models import ProcessingResult, BatchProcessingResult
-from .file_manager import FileManager
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class BatchProcessor:
         approach: str = "privacy",
         level: int = 2,
         output_format: str = "text",
-        skip_existing: bool = True
+        skip_existing: bool = True,
     ) -> Dict[str, str]:
         """
         Process all JSON files in a directory
@@ -100,7 +99,7 @@ class BatchProcessor:
         approach: str,
         level: int,
         output_format: str,
-        skip_existing: bool
+        skip_existing: bool,
     ) -> Dict[str, str]:
         """Process multiple files using thread pool"""
         results = {}
@@ -120,7 +119,11 @@ class BatchProcessor:
 
                 future = executor.submit(
                     self._process_single_file,
-                    input_file, output_file, approach, level, output_format
+                    input_file,
+                    output_file,
+                    approach,
+                    level,
+                    output_format,
                 )
                 future_to_file[future] = (input_file, output_file)
 
@@ -129,7 +132,9 @@ class BatchProcessor:
                 input_file, output_file = future_to_file[future]
                 try:
                     result = future.result()
-                    results[str(input_file)] = str(output_file) if result.success else ""
+                    results[str(input_file)] = (
+                        str(output_file) if result.success else ""
+                    )
                 except Exception as e:
                     logger.error(f"Failed to process {input_file}: {e}")
                     results[str(input_file)] = ""
@@ -142,7 +147,7 @@ class BatchProcessor:
         output_file: Path,
         approach: str,
         level: int,
-        output_format: str
+        output_format: str,
     ) -> ProcessingResult:
         """Process a single file"""
         try:
@@ -153,14 +158,14 @@ class BatchProcessor:
                 input_file=str(input_file),
                 approach=approach,
                 level=level,
-                output_format=output_format
+                output_format=output_format,
             )
 
             # Ensure output directory exists
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Save result
-            with open(output_file, 'w', encoding='utf-8') as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 f.write(cleaned_data)
 
             logger.info(f"Successfully processed: {input_file} -> {output_file}")
@@ -175,17 +180,15 @@ class BatchProcessor:
                     "approach": approach,
                     "level": level,
                     "format": output_format,
-                    "size_bytes": len(cleaned_data)
-                }
+                    "size_bytes": len(cleaned_data),
+                },
             )
 
         except Exception as e:
             logger.error(f"Failed to process {input_file}: {e}")
 
             return ProcessingResult(
-                success=False,
-                input_file=str(input_file),
-                error=str(e)
+                success=False, input_file=str(input_file), error=str(e)
             )
 
     def _generate_output_path(
@@ -194,7 +197,7 @@ class BatchProcessor:
         output_dir: Path,
         approach: str,
         level: int,
-        output_format: str
+        output_format: str,
     ) -> Path:
         """Generate output file path"""
         # Use output directory directly (no subdirectories)
@@ -202,14 +205,14 @@ class BatchProcessor:
 
         # Extract chat name from JSON file
         chat_name = self._extract_chat_name(input_file)
-        
+
         # Generate filename
         extension = self._get_extension(output_format)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Clean chat name for filename
         clean_name = self._clean_filename(chat_name)
-        level_name = ['basic', 'medium', 'full'][level-1]
+        level_name = ["basic", "medium", "full"][level - 1]
 
         filename = f"{clean_name}_{approach}_{level_name}_{timestamp}{extension}"
 
@@ -217,48 +220,45 @@ class BatchProcessor:
 
     def _get_extension(self, output_format: str) -> str:
         """Get file extension for output format"""
-        extensions = {
-            "text": ".txt",
-            "json": ".json",
-            "markdown": ".md",
-            "csv": ".csv"
-        }
+        extensions = {"text": ".txt", "json": ".json", "markdown": ".md", "csv": ".csv"}
         return extensions.get(output_format, ".txt")
-    
+
     def _extract_chat_name(self, input_path: Path) -> str:
         """Extract chat name from Telegram JSON file"""
         try:
             import json
-            with open(input_path, 'r', encoding='utf-8') as f:
+
+            with open(input_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data.get('name', input_path.stem)
+            return data.get("name", input_path.stem)
         except Exception:
             # Fallback to filename if JSON parsing fails
             return input_path.stem
-    
+
     def _clean_filename(self, name: str) -> str:
         """Clean chat name for use in filename"""
         import re
+
         # Remove special characters except spaces, hyphens, and underscores
-        clean_name = re.sub(r'[^\w\s-]', '', name)
+        clean_name = re.sub(r"[^\w\s-]", "", name)
         # Replace spaces and multiple hyphens with single underscore
-        clean_name = re.sub(r'[-\s]+', '_', clean_name)
+        clean_name = re.sub(r"[-\s]+", "_", clean_name)
         # Remove leading/trailing underscores
-        clean_name = clean_name.strip('_')
+        clean_name = clean_name.strip("_")
         return clean_name or "unknown_chat"
 
     def _estimate_message_count(self, cleaned_data: str) -> int:
         """Estimate number of messages in cleaned data"""
         # Rough estimation based on line breaks and content
-        lines = cleaned_data.strip().split('\n')
+        lines = cleaned_data.strip().split("\n")
 
         # Count non-empty lines that look like message starts
         message_count = 0
         for line in lines:
             line = line.strip()
-            if line and not line.startswith('=') and not line.startswith('Chat:'):
+            if line and not line.startswith("=") and not line.startswith("Chat:"):
                 # Look for patterns that indicate message starts
-                if any(indicator in line for indicator in [':', ']:', 'ID:']):
+                if any(indicator in line for indicator in [":", "]:", "ID:"]):
                     message_count += 1
 
         return max(message_count, 1)  # At least 1 if we have content
@@ -282,18 +282,19 @@ class BatchProcessor:
 
         for input_file, output_file in results.items():
             success = bool(output_file)
-            processing_results.append(ProcessingResult(
-                success=success,
-                input_file=input_file,
-                output_file=output_file if success else None,
-                processing_time=0.0  # Would need actual timing
-            ))
+            processing_results.append(
+                ProcessingResult(
+                    success=success,
+                    input_file=input_file,
+                    output_file=output_file if success else None,
+                    processing_time=0.0,  # Would need actual timing
+                )
+            )
 
         return BatchProcessingResult(
             total_files=total_files,
             successful_files=successful_files,
             failed_files=failed_files,
             results=processing_results,
-            total_processing_time=total_time
+            total_processing_time=total_time,
         )
-

@@ -3,7 +3,7 @@ OpenAI LLM provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import List, AsyncGenerator
 import tiktoken
 
 try:
@@ -19,7 +19,7 @@ from ...constants import (
     OPENAI_EMBEDDING_BATCH_SIZE,
     MODEL_PRICING,
     MODEL_CONTEXT_LENGTHS,
-    CHARS_PER_TOKEN_ESTIMATE
+    CHARS_PER_TOKEN_ESTIMATE,
 )
 
 
@@ -50,8 +50,7 @@ class OpenAIProvider(BaseLLMProvider):
                 raise ImportError("openai package is required for OpenAI provider")
 
             self._client = AsyncOpenAI(
-                api_key=self.config.api_key,
-                base_url=self.config.base_url
+                api_key=self.config.api_key, base_url=self.config.base_url
             )
         return self._client
 
@@ -141,12 +140,9 @@ class OpenAIProvider(BaseLLMProvider):
             all_embeddings = []
 
             for i in range(0, len(texts), OPENAI_EMBEDDING_BATCH_SIZE):
-                batch = texts[i:i + OPENAI_EMBEDDING_BATCH_SIZE]
+                batch = texts[i : i + OPENAI_EMBEDDING_BATCH_SIZE]
 
-                response = await client.embeddings.create(
-                    input=batch,
-                    model=model
-                )
+                response = await client.embeddings.create(input=batch, model=model)
 
                 embeddings = [data.embedding for data in response.data]
                 all_embeddings.extend(embeddings)
@@ -161,7 +157,9 @@ class OpenAIProvider(BaseLLMProvider):
         """Count tokens in text"""
         try:
             if self._encoder is None:
-                self._encoder = tiktoken.encoding_for_model(self.config.model or "gpt-4")
+                self._encoder = tiktoken.encoding_for_model(
+                    self.config.model or "gpt-4"
+                )
 
             return len(self._encoder.encode(text))
         except Exception:

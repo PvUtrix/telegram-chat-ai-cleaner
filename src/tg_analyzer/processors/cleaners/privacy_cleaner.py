@@ -80,7 +80,9 @@ class PrivacyCleaner(BaseCleaner):
 
         return f"{user_name}: {text}"
 
-    def _clean_level_2(self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]) -> str:
+    def _clean_level_2(
+        self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]
+    ) -> str:
         """Level 2: + timestamps + reply structure"""
         # Skip non-message types
         if message.get("type") != "message":
@@ -94,10 +96,17 @@ class PrivacyCleaner(BaseCleaner):
             parts.append(f"[{timestamp}]")
 
         # Add reply context
-        if message.get("reply_to_message_id") and message["reply_to_message_id"] in messages_dict:
+        if (
+            message.get("reply_to_message_id")
+            and message["reply_to_message_id"] in messages_dict
+        ):
             reply_to = messages_dict[message["reply_to_message_id"]]
-            reply_sender = reply_to.get("from_user") or self._anonymize_user_id(reply_to.get("from_id", ""))
-            reply_text = reply_to.get("text", "")[:REPLY_TEXT_PREVIEW_LENGTH]  # Truncate for preview
+            reply_sender = reply_to.get("from_user") or self._anonymize_user_id(
+                reply_to.get("from_id", "")
+            )
+            reply_text = reply_to.get("text", "")[
+                :REPLY_TEXT_PREVIEW_LENGTH
+            ]  # Truncate for preview
             if reply_text:
                 parts.append(f"[Reply to {reply_sender}: {reply_text}...]")
 
@@ -118,7 +127,9 @@ class PrivacyCleaner(BaseCleaner):
 
         return " ".join(parts)
 
-    def _clean_level_3(self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]) -> str:
+    def _clean_level_3(
+        self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]
+    ) -> str:
         """Level 3: + all metadata, keep user identifiers"""
         # Skip non-message types except service messages
         msg_type = message.get("type", "")
@@ -136,7 +147,10 @@ class PrivacyCleaner(BaseCleaner):
         parts.append(f"ID:{message.get('id', 'unknown')}")
 
         # Add reply context
-        if message.get("reply_to_message_id") and message["reply_to_message_id"] in messages_dict:
+        if (
+            message.get("reply_to_message_id")
+            and message["reply_to_message_id"] in messages_dict
+        ):
             reply_id = message["reply_to_message_id"]
             parts.append(f"[Reply to ID:{reply_id}]")
 
@@ -239,4 +253,3 @@ class PrivacyCleaner(BaseCleaner):
             return "Audio"
 
         return media_type
-

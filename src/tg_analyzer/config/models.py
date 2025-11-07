@@ -2,13 +2,14 @@
 Pydantic models for configuration and data structures
 """
 
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
 
 class TextEntity(BaseModel):
     """Text entity (link, mention, hashtag, etc.)"""
+
     type: str
     text: str
     href: Optional[str] = None
@@ -17,6 +18,7 @@ class TextEntity(BaseModel):
 
 class Reaction(BaseModel):
     """Message reaction"""
+
     type: str = "emoji"
     emoji: Optional[str] = None
     count: int = 0
@@ -25,6 +27,7 @@ class Reaction(BaseModel):
 
 class Message(BaseModel):
     """Telegram message"""
+
     id: int
     type: str
     date: Optional[datetime] = None
@@ -73,6 +76,7 @@ class Message(BaseModel):
 
 class ChatInfo(BaseModel):
     """Telegram chat information"""
+
     name: str
     type: str
     id: str
@@ -123,7 +127,9 @@ class ConfigSettings(BaseModel):
     web_host: str = "0.0.0.0"
     web_port: int = 8000
     enable_cors: bool = True
-    cors_origins: str = "http://localhost:3000,http://localhost:8000"  # Comma-separated list
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:8000"  # Comma-separated list
+    )
 
     # Logging
     log_level: str = "INFO"
@@ -134,6 +140,7 @@ class ConfigSettings(BaseModel):
 
 class LLMConfig(BaseModel):
     """LLM provider configuration"""
+
     provider: str
     model: str
     api_key: Optional[str] = None
@@ -145,6 +152,7 @@ class LLMConfig(BaseModel):
 
 class VectorConfig(BaseModel):
     """Vector database configuration"""
+
     provider: str = "supabase"
     url: Optional[str] = None
     api_key: Optional[str] = None
@@ -156,6 +164,7 @@ class VectorConfig(BaseModel):
 
 class ProcessingResult(BaseModel):
     """Result of processing operations"""
+
     success: bool
     input_file: str
     output_file: Optional[str] = None
@@ -167,9 +176,9 @@ class ProcessingResult(BaseModel):
 
 class BatchProcessingResult(BaseModel):
     """Result of batch processing"""
+
     total_files: int = 0
     successful_files: int = 0
     failed_files: int = 0
     results: List[ProcessingResult] = Field(default_factory=list)
     total_processing_time: float = 0.0
-

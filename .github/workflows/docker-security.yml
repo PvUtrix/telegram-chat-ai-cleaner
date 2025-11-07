@@ -1,0 +1,117 @@
+name: Docker Security Scanning
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/docker-security.yml'
+  schedule:
+    # Run weekly on Tuesday at 00:00 UTC
+    - cron: '0 0 * * 2'
+
+permissions: {}
+
+jobs:
+  hadolint:
+    name: Dockerfile Linting (Hadolint)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@36c7e569d5bd0c61e00e23b5e65cb40e7c8e0d2b # v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint-results.sarif
+          no-fail: false
+
+      - name: Upload Hadolint results
+        uses: github/codeql-action/upload-sarif@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
+        if: always()
+        with:
+          sarif_file: hadolint-results.sarif
+          category: hadolint
+
+  trivy:
+    name: Container Image Scanning (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Build Docker image
+        run: docker build -t telegram-chat-analyzer:test .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.31.1
+        with:
+          image-ref: telegram-chat-analyzer:test
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: trivy
+
+      - name: Run Trivy in table mode
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.31.1
+        with:
+          image-ref: telegram-chat-analyzer:test
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  dockle:
+    name: Docker Best Practices (Dockle)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Build Docker image
+        run: docker build -t telegram-chat-analyzer:test .
+
+      - name: Run Dockle
+        uses: erzz/dockle-action@d44df1ce5e6f6ea3f5d73aec89e5f72a05b97fa1 # v1.4.1
+        with:
+          image: telegram-chat-analyzer:test
+          exit-code: 0
+          failure-threshold: high
+
+  grype:
+    name: Vulnerability Scanning (Grype)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Build Docker image
+        run: docker build -t telegram-chat-analyzer:test .
+
+      - name: Run Grype vulnerability scanner
+        uses: anchore/scan-action@db42325e6f4c2424e12e7c6b9d1f8e1e984afca3 # v6.0.0
+        id: grype
+        with:
+          image: telegram-chat-analyzer:test
+          fail-build: false
+          severity-cutoff: medium
+
+      - name: Upload Grype results
+        uses: github/codeql-action/upload-sarif@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
+        if: always()
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+          category: grype
