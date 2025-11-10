@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Run Hadolint
-        uses: hadolint/hadolint-action@36c7e569d5bd0c61e00e23b5e65cb40e7c8e0d2b # v3.1.0
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
         with:
           dockerfile: Dockerfile
           format: sarif
@@ -51,7 +51,7 @@ jobs:
         run: docker build -t telegram-chat-analyzer:test .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.31.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
         with:
           image-ref: telegram-chat-analyzer:test
           format: 'sarif'
@@ -66,7 +66,7 @@ jobs:
           category: trivy
 
       - name: Run Trivy in table mode
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.31.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
         with:
           image-ref: telegram-chat-analyzer:test
           format: 'table'
@@ -102,7 +102,7 @@ jobs:
         run: docker build -t telegram-chat-analyzer:test .
 
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@db42325e6f4c2424e12e7c6b9d1f8e1e984afca3 # v6.0.0
+        uses: anchore/scan-action@568b89d27fc18c60e56937bff480c91c772cd993 # v7.1.0
         id: grype
         with:
           image: telegram-chat-analyzer:test
