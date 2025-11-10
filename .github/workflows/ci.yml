@@ -40,6 +40,7 @@ jobs:
           pip install -r requirements.txt || true
           pip install -r requirements-dev.txt || true
           pip install ruff==0.14.3 black==25.1.0 mypy==1.18.2 pytest==8.4.2 pytest-cov==7.0.0 build==1.3.0 twine==6.2.0
+          pip install -e .
 
       - name: Lint (ruff)
         run: ruff check src/ --output-format=github
@@ -52,7 +53,7 @@ jobs:
         continue-on-error: true  # Informational only - has pre-existing type errors
 
       - name: Tests (pytest)
-        run: pytest tests/test_constants.py -v
+        run: python -m pytest tests/test_constants.py -v
 
       - name: Build package metadata
         run: |
