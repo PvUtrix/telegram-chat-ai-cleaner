@@ -11,4 +11,3 @@ __email__ = "pvutrix@gmail.com"
 from .core import TelegramAnalyzer
 
 __all__ = ["TelegramAnalyzer"]
-

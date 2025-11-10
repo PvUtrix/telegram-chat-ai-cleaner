@@ -3,7 +3,6 @@ JSON formatter for structured output
 """
 
 import json
-from typing import Dict, Any, List
 from .base_formatter import BaseFormatter
 
 
@@ -37,9 +36,8 @@ class JSONFormatter(BaseFormatter):
             "content": cleaned_data.strip(),
             "metadata": {
                 "generated_by": "telegram-chat-analyzer",
-                "format_type": "text_wrapped_json"
-            }
+                "format_type": "text_wrapped_json",
+            },
         }
 
         return json.dumps(result, indent=2, ensure_ascii=False)
-

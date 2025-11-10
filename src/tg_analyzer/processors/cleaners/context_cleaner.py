@@ -131,9 +131,12 @@ class ContextCleaner(BaseCleaner):
 
         return " ".join(parts)
 
-    def _process_reply_chain(self, start_message: Dict[str, Any],
-                           msg_lookup: Dict[int, Dict[str, Any]],
-                           processed: Set[int]) -> List[str]:
+    def _process_reply_chain(
+        self,
+        start_message: Dict[str, Any],
+        msg_lookup: Dict[int, Dict[str, Any]],
+        processed: Set[int],
+    ) -> List[str]:
         """Process a chain of replies"""
         lines = []
         current_msg = start_message
@@ -169,7 +172,9 @@ class ContextCleaner(BaseCleaner):
 
         return lines
 
-    def _build_conversation_graph(self, messages: List[Dict[str, Any]]) -> Dict[int, List[int]]:
+    def _build_conversation_graph(
+        self, messages: List[Dict[str, Any]]
+    ) -> Dict[int, List[int]]:
         """Build a graph of message relationships"""
         graph = defaultdict(list)
 
@@ -180,9 +185,12 @@ class ContextCleaner(BaseCleaner):
 
         return dict(graph)
 
-    def _process_conversation_thread(self, root_message: Dict[str, Any],
-                                   msg_lookup: Dict[int, Dict[str, Any]],
-                                   conversation_graph: Dict[int, List[int]]) -> List[str]:
+    def _process_conversation_thread(
+        self,
+        root_message: Dict[str, Any],
+        msg_lookup: Dict[int, Dict[str, Any]],
+        conversation_graph: Dict[int, List[int]],
+    ) -> List[str]:
         """Process a conversation thread with full context"""
         lines = []
 
@@ -290,4 +298,3 @@ class ContextCleaner(BaseCleaner):
             context_parts.append(f"{width}×{height}")
 
         return " ".join(context_parts)
-

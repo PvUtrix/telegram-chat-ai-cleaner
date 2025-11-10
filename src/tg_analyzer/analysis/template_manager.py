@@ -6,8 +6,6 @@ import logging
 import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-import importlib.util
-import sys
 
 from ..config.config_manager import ConfigManager
 
@@ -26,7 +24,7 @@ class TemplateManager:
             config: Configuration manager
         """
         self.config = config
-        self.templates_dir = Path('analysis_templates')
+        self.templates_dir = Path("analysis_templates")
         self.templates_dir.mkdir(exist_ok=True)
 
     def discover_templates(self) -> List[Dict[str, Any]]:
@@ -37,20 +35,20 @@ class TemplateManager:
             List of template information
         """
         templates = []
-        
+
         if not self.templates_dir.exists():
             return templates
-        
+
         for template_dir in self.templates_dir.iterdir():
             if not template_dir.is_dir():
                 continue
-            
+
             template_info = self._load_template_info(template_dir)
             if template_info:
                 templates.append(template_info)
-        
+
         # Sort by name
-        templates.sort(key=lambda x: x['name'])
+        templates.sort(key=lambda x: x["name"])
         return templates
 
     def _load_template_info(self, template_dir: Path) -> Optional[Dict[str, Any]]:
@@ -63,42 +61,42 @@ class TemplateManager:
         Returns:
             Template information or None if invalid
         """
-        script_file = template_dir / 'script.py'
-        config_file = template_dir / 'config.yaml'
-        
+        script_file = template_dir / "script.py"
+        config_file = template_dir / "config.yaml"
+
         if not script_file.exists():
             logger.warning(f"Template {template_dir.name} missing script.py")
             return None
-        
+
         # Load template metadata
         template_info = {
-            'name': template_dir.name,
-            'script_path': str(script_file),
-            'template_dir': str(template_dir),
-            'description': f"Analysis template: {template_dir.name}",
-            'version': '1.0.0',
-            'author': 'Unknown',
-            'tags': []
+            "name": template_dir.name,
+            "script_path": str(script_file),
+            "template_dir": str(template_dir),
+            "description": f"Analysis template: {template_dir.name}",
+            "version": "1.0.0",
+            "author": "Unknown",
+            "tags": [],
         }
-        
+
         # Load config file if exists
         if config_file.exists():
             try:
-                with open(config_file, 'r', encoding='utf-8') as f:
+                with open(config_file, "r", encoding="utf-8") as f:
                     config_data = yaml.safe_load(f)
                     template_info.update(config_data)
-                    
+
                     # Extract LLM config if present
-                    if 'llm_config' in config_data:
-                        template_info['llm_defaults'] = config_data['llm_config']
+                    if "llm_config" in config_data:
+                        template_info["llm_defaults"] = config_data["llm_config"]
             except Exception as e:
                 logger.warning(f"Failed to load config for {template_dir.name}: {e}")
-        
+
         # Extract description from script docstring
         try:
-            with open(script_file, 'r', encoding='utf-8') as f:
+            with open(script_file, "r", encoding="utf-8") as f:
                 content = f.read()
-                
+
             # Look for docstring at the top
             if '"""' in content:
                 start = content.find('"""') + 3
@@ -106,14 +104,16 @@ class TemplateManager:
                 if end > start:
                     docstring = content[start:end].strip()
                     # Extract description from docstring
-                    lines = docstring.split('\n')
+                    lines = docstring.split("\n")
                     for line in lines:
-                        if line.strip() and not line.strip().startswith('Template:'):
-                            template_info['description'] = line.strip()
+                        if line.strip() and not line.strip().startswith("Template:"):
+                            template_info["description"] = line.strip()
                             break
         except Exception as e:
-            logger.warning(f"Failed to extract description from {template_dir.name}: {e}")
-        
+            logger.warning(
+                f"Failed to extract description from {template_dir.name}: {e}"
+            )
+
         return template_info
 
     def get_template(self, template_name: str) -> Optional[Dict[str, Any]]:
@@ -142,28 +142,30 @@ class TemplateManager:
         template = self.get_template(template_name)
         if not template:
             return {}
-        
-        return template.get('llm_defaults', {})
 
-    def merge_template_defaults(self, template_name: str, user_params: Dict[str, Any]) -> Dict[str, Any]:
+        return template.get("llm_defaults", {})
+
+    def merge_template_defaults(
+        self, template_name: str, user_params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Merge template defaults with user parameters
-        
+
         Args:
             template_name: Name of the template
             user_params: User-specified parameters
-            
+
         Returns:
             Merged parameters with template defaults as fallback
         """
         template_defaults = self.get_template_defaults(template_name)
-        
+
         # Start with template defaults
         merged_params = template_defaults.copy()
-        
+
         # Override with user parameters
         merged_params.update(user_params)
-        
+
         return merged_params
 
     def validate_template(self, template_name: str) -> List[str]:
@@ -178,29 +180,29 @@ class TemplateManager:
         """
         errors = []
         template_dir = self.templates_dir / template_name
-        
+
         if not template_dir.exists():
             errors.append(f"Template directory not found: {template_dir}")
             return errors
-        
-        script_file = template_dir / 'script.py'
+
+        script_file = template_dir / "script.py"
         if not script_file.exists():
             errors.append(f"Script file not found: {script_file}")
         else:
             # Check if script has required analyze function
             try:
-                with open(script_file, 'r', encoding='utf-8') as f:
+                with open(script_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                
-                if 'async def analyze(' not in content:
+
+                if "async def analyze(" not in content:
                     errors.append("Script missing required 'analyze' function")
-                
-                if 'llm_manager' not in content:
+
+                if "llm_manager" not in content:
                     errors.append("Script must use 'llm_manager' parameter")
-                    
+
             except Exception as e:
                 errors.append(f"Failed to read script file: {e}")
-        
+
         return errors
 
     def create_template(self, template_name: str, description: str = None) -> bool:
@@ -215,15 +217,15 @@ class TemplateManager:
             True if successful, False otherwise
         """
         template_dir = self.templates_dir / template_name
-        
+
         if template_dir.exists():
             logger.error(f"Template {template_name} already exists")
             return False
-        
+
         try:
             # Create template directory
             template_dir.mkdir(parents=True)
-            
+
             # Create script.py with template
             script_content = f'''"""
 Template: {template_name}
@@ -291,26 +293,26 @@ Chat data:
         }}
     }}
 '''
-            
-            script_file = template_dir / 'script.py'
-            with open(script_file, 'w', encoding='utf-8') as f:
+
+            script_file = template_dir / "script.py"
+            with open(script_file, "w", encoding="utf-8") as f:
                 f.write(script_content)
-            
+
             # Create config.yaml
-            config_content = f'''name: {template_name}
+            config_content = f"""name: {template_name}
 description: {description or f"Analysis template: {template_name}"}
 version: "1.0.0"
 author: "User"
 tags: []
-'''
-            
-            config_file = template_dir / 'config.yaml'
-            with open(config_file, 'w', encoding='utf-8') as f:
+"""
+
+            config_file = template_dir / "config.yaml"
+            with open(config_file, "w", encoding="utf-8") as f:
                 f.write(config_content)
-            
+
             logger.info(f"Created template: {template_name}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to create template {template_name}: {e}")
             return False
@@ -326,13 +328,14 @@ tags: []
             True if successful, False otherwise
         """
         template_dir = self.templates_dir / template_name
-        
+
         if not template_dir.exists():
             logger.error(f"Template {template_name} not found")
             return False
-        
+
         try:
             import shutil
+
             shutil.rmtree(template_dir)
             logger.info(f"Deleted template: {template_name}")
             return True

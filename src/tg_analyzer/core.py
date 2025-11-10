@@ -3,8 +3,6 @@ Core TelegramAnalyzer class providing the main API
 """
 
 from typing import Optional, Dict, Any, List
-from pathlib import Path
-import json
 
 from .config.config_manager import ConfigManager
 from .processors.telegram_parser import TelegramParser
@@ -34,7 +32,7 @@ class TelegramAnalyzer:
         input_file: str,
         approach: str = "privacy",
         level: int = 2,
-        output_format: str = "text"
+        output_format: str = "text",
     ) -> str:
         """
         Clean a Telegram export file
@@ -55,22 +53,34 @@ class TelegramAnalyzer:
         """
         try:
             # Validate inputs
-            from .constants import VALID_CLEANING_APPROACHES, VALID_CLEANING_LEVELS, VALID_OUTPUT_FORMATS
+            from .constants import (
+                VALID_CLEANING_APPROACHES,
+                VALID_CLEANING_LEVELS,
+                VALID_OUTPUT_FORMATS,
+            )
 
             if approach not in VALID_CLEANING_APPROACHES:
-                raise ValueError(f"Invalid approach: {approach}. Must be one of {VALID_CLEANING_APPROACHES}")
+                raise ValueError(
+                    f"Invalid approach: {approach}. Must be one of {VALID_CLEANING_APPROACHES}"
+                )
 
             if level not in VALID_CLEANING_LEVELS:
-                raise ValueError(f"Invalid level: {level}. Must be one of {VALID_CLEANING_LEVELS}")
+                raise ValueError(
+                    f"Invalid level: {level}. Must be one of {VALID_CLEANING_LEVELS}"
+                )
 
             if output_format not in VALID_OUTPUT_FORMATS:
-                raise ValueError(f"Invalid format: {output_format}. Must be one of {VALID_OUTPUT_FORMATS}")
+                raise ValueError(
+                    f"Invalid format: {output_format}. Must be one of {VALID_OUTPUT_FORMATS}"
+                )
 
             # Parse the input file
             data = self.parser.parse_file(input_file)
 
             if not data or not data.messages:
-                raise ValueError(f"No messages found in {input_file}. File may be empty or invalid.")
+                raise ValueError(
+                    f"No messages found in {input_file}. File may be empty or invalid."
+                )
 
             # Get the appropriate cleaner
             cleaner = get_cleaner(approach, level)
@@ -95,7 +105,7 @@ class TelegramAnalyzer:
         prompt: str,
         provider: Optional[str] = None,
         model: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Analyze cleaned data with LLM
@@ -124,15 +134,18 @@ class TelegramAnalyzer:
             # Validate provider if specified
             if provider:
                 from .constants import VALID_LLM_PROVIDERS
+
                 if provider not in VALID_LLM_PROVIDERS:
-                    raise ValueError(f"Invalid provider: {provider}. Must be one of {VALID_LLM_PROVIDERS}")
+                    raise ValueError(
+                        f"Invalid provider: {provider}. Must be one of {VALID_LLM_PROVIDERS}"
+                    )
 
             return await self.llm_manager.analyze(
                 input_data=input_data,
                 prompt=prompt,
                 provider=provider,
                 model=model,
-                **kwargs
+                **kwargs,
             )
         except ValueError as e:
             raise ValueError(f"Analysis validation error: {str(e)}") from e
@@ -145,7 +158,7 @@ class TelegramAnalyzer:
         provider: Optional[str] = None,
         model: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        chunking_strategy: str = "overlap"
+        chunking_strategy: str = "overlap",
     ) -> Dict[str, Any]:
         """
         Create embeddings and store in vector database
@@ -169,7 +182,7 @@ class TelegramAnalyzer:
             "fixed_size": ChunkingStrategy.FIXED_SIZE,
             "sentence": ChunkingStrategy.SENTENCE,
             "paragraph": ChunkingStrategy.PARAGRAPH,
-            "overlap": ChunkingStrategy.OVERLAP
+            "overlap": ChunkingStrategy.OVERLAP,
         }
 
         strategy = strategy_map.get(chunking_strategy, ChunkingStrategy.OVERLAP)
@@ -179,7 +192,7 @@ class TelegramAnalyzer:
             source_metadata=metadata or {},
             chunking_strategy=strategy,
             provider=provider,
-            model=model
+            model=model,
         )
 
     async def search_vectors(
@@ -187,7 +200,7 @@ class TelegramAnalyzer:
         query: str,
         limit: int = 10,
         metadata_filter: Optional[Dict[str, Any]] = None,
-        provider: Optional[str] = None
+        provider: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Search vector database for similar content
@@ -205,10 +218,7 @@ class TelegramAnalyzer:
 
         pipeline = EmbeddingPipeline(self.config, self.llm_manager)
         return await pipeline.search_similar(
-            query=query,
-            provider=provider,
-            limit=limit,
-            metadata_filter=metadata_filter
+            query=query, provider=provider, limit=limit, metadata_filter=metadata_filter
         )
 
     def batch_process(
@@ -217,7 +227,7 @@ class TelegramAnalyzer:
         output_dir: str = "data/output",
         approach: str = "privacy",
         level: int = 2,
-        output_format: str = "text"
+        output_format: str = "text",
     ) -> Dict[str, str]:
         """
         Process all JSON files in input directory
@@ -241,7 +251,7 @@ class TelegramAnalyzer:
             output_dir=output_dir,
             approach=approach,
             level=level,
-            output_format=output_format
+            output_format=output_format,
         )
 
     def get_config(self) -> Dict[str, Any]:

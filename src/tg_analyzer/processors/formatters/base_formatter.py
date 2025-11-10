@@ -3,8 +3,6 @@ Base formatter class and factory functions
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
-from ..telegram_parser import ChatInfo
 
 
 class BaseFormatter(ABC):
@@ -49,17 +47,22 @@ def get_formatter(format_type: str) -> BaseFormatter:
     # Import here to avoid circular imports
     if format_type == "text":
         from .text_formatter import TextFormatter
+
         return TextFormatter()
     elif format_type == "json":
         from .json_formatter import JSONFormatter
+
         return JSONFormatter()
     elif format_type == "markdown":
         from .markdown_formatter import MarkdownFormatter
+
         return MarkdownFormatter()
     elif format_type == "csv":
         from .csv_formatter import CSVFormatter
+
         return CSVFormatter()
     else:
         supported_formats = ["text", "json", "markdown", "csv"]
-        raise ValueError(f"Unsupported format: {format_type}. Supported: {supported_formats}")
-
+        raise ValueError(
+            f"Unsupported format: {format_type}. Supported: {supported_formats}"
+        )

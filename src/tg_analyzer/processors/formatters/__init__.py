@@ -9,7 +9,10 @@ from .markdown_formatter import MarkdownFormatter
 from .csv_formatter import CSVFormatter
 
 __all__ = [
-    "BaseFormatter", "get_formatter",
-    "TextFormatter", "JSONFormatter", "MarkdownFormatter", "CSVFormatter"
+    "BaseFormatter",
+    "get_formatter",
+    "TextFormatter",
+    "JSONFormatter",
+    "MarkdownFormatter",
+    "CSVFormatter",
 ]
-

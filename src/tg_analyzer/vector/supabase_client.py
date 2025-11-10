@@ -3,8 +3,7 @@ Supabase vector database client with pgvector support
 """
 
 import logging
-from typing import Dict, Any, List, Optional, Tuple
-import json
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 try:
@@ -31,16 +30,18 @@ class SupabaseClient:
         """
         self.config = config
         self._client: Optional[Client] = None
-        self._table_name = config.get('supabase_table_name', 'chat_embeddings')
+        self._table_name = config.get("supabase_table_name", "chat_embeddings")
 
     def _get_client(self) -> Client:
         """Get or create Supabase client"""
         if self._client is None:
             if create_client is None:
-                raise ImportError("supabase package is required for vector database operations")
+                raise ImportError(
+                    "supabase package is required for vector database operations"
+                )
 
-            url = self.config.get('supabase_url')
-            key = self.config.get('supabase_key')
+            url = self.config.get("supabase_url")
+            key = self.config.get("supabase_key")
 
             if not url or not key:
                 raise ValueError("Supabase URL and key must be configured")
@@ -55,7 +56,7 @@ class SupabaseClient:
         texts: List[str],
         metadata: Optional[List[Dict[str, Any]]] = None,
         provider: str = "openai",
-        model: str = "text-embedding-3-small"
+        model: str = "text-embedding-3-small",
     ) -> Dict[str, Any]:
         """
         Store embeddings in Supabase vector database
@@ -88,7 +89,7 @@ class SupabaseClient:
                 "provider": provider,
                 "model": model,
                 "created_at": datetime.now().isoformat(),
-                "chunk_index": i
+                "chunk_index": i,
             }
             records.append(record)
 
@@ -98,9 +99,9 @@ class SupabaseClient:
             inserted_ids = []
 
             for i in range(0, len(records), batch_size):
-                batch = records[i:i + batch_size]
+                batch = records[i : i + batch_size]
                 response = client.table(self._table_name).insert(batch).execute()
-                batch_ids = [record['id'] for record in response.data]
+                batch_ids = [record["id"] for record in response.data]
                 inserted_ids.extend(batch_ids)
                 logger.info(f"Inserted batch of {len(batch)} vectors")
 
@@ -109,7 +110,7 @@ class SupabaseClient:
                 "inserted_count": len(inserted_ids),
                 "ids": inserted_ids,
                 "provider": provider,
-                "model": model
+                "model": model,
             }
 
             logger.info(f"Successfully stored {len(inserted_ids)} vectors in Supabase")
@@ -124,7 +125,7 @@ class SupabaseClient:
         query_embedding: List[float],
         limit: int = 10,
         metadata_filter: Optional[Dict[str, Any]] = None,
-        similarity_threshold: float = 0.0
+        similarity_threshold: float = 0.0,
     ) -> List[Dict[str, Any]]:
         """
         Search for similar vectors using cosine similarity
@@ -163,7 +164,7 @@ class SupabaseClient:
             LIMIT {limit}
             """
 
-            response = client.rpc('execute_sql', {'query': query_str}).execute()
+            response = client.rpc("execute_sql", {"query": query_str}).execute()
 
             results = []
             for row in response.data:
@@ -174,7 +175,7 @@ class SupabaseClient:
                     "provider": row["provider"],
                     "model": row["model"],
                     "created_at": row["created_at"],
-                    "similarity": float(row["similarity"])
+                    "similarity": float(row["similarity"]),
                 }
                 results.append(result)
 
@@ -226,7 +227,9 @@ class SupabaseClient:
 
         try:
             # Get total count
-            count_response = client.table(self._table_name).select("id", count="exact").execute()
+            count_response = (
+                client.table(self._table_name).select("id", count="exact").execute()
+            )
             total_count = count_response.count
 
             # Get provider breakdown
@@ -235,7 +238,9 @@ class SupabaseClient:
             FROM {self._table_name}
             GROUP BY provider
             """
-            provider_response = client.rpc('execute_sql', {'query': provider_query}).execute()
+            provider_response = client.rpc(
+                "execute_sql", {"query": provider_query}
+            ).execute()
 
             providers = {}
             for row in provider_response.data:
@@ -247,14 +252,18 @@ class SupabaseClient:
             FROM {self._table_name}
             WHERE created_at > NOW() - INTERVAL '24 hours'
             """
-            recent_response = client.rpc('execute_sql', {'query': recent_query}).execute()
-            recent_count = recent_response.data[0]["count"] if recent_response.data else 0
+            recent_response = client.rpc(
+                "execute_sql", {"query": recent_query}
+            ).execute()
+            recent_count = (
+                recent_response.data[0]["count"] if recent_response.data else 0
+            )
 
             return {
                 "total_vectors": total_count,
                 "providers": providers,
                 "recent_additions_24h": recent_count,
-                "table_name": self._table_name
+                "table_name": self._table_name,
             }
 
         except Exception as e:
@@ -298,13 +307,15 @@ class SupabaseClient:
             """
 
             # Execute table creation
-            client.rpc('execute_sql', {'query': create_table_query}).execute()
+            client.rpc("execute_sql", {"query": create_table_query}).execute()
 
             logger.info(f"Created/verified table: {self._table_name}")
 
         except Exception as e:
             logger.error(f"Failed to create table: {e}")
-            logger.info("Note: Table creation requires appropriate database permissions")
+            logger.info(
+                "Note: Table creation requires appropriate database permissions"
+            )
             logger.info("You may need to create the table manually or ask your DBA")
             raise
 
@@ -319,19 +330,19 @@ class SupabaseClient:
             client = self._get_client()
 
             # Simple query to test connection
-            response = client.table(self._table_name).select("id", count="exact").limit(1).execute()
+            response = (
+                client.table(self._table_name)
+                .select("id", count="exact")
+                .limit(1)
+                .execute()
+            )
 
             return {
                 "status": "healthy",
                 "table_exists": True,
                 "total_records": response.count,
-                "connection": "ok"
+                "connection": "ok",
             }
 
         except Exception as e:
-            return {
-                "status": "unhealthy",
-                "error": str(e),
-                "connection": "failed"
-            }
-
+            return {"status": "unhealthy", "error": str(e), "connection": "failed"}

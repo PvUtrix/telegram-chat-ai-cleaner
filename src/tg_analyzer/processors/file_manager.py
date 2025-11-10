@@ -35,7 +35,7 @@ class FileManager:
             self.get_input_dir(),
             self.get_output_dir(),
             self.get_analysis_dir(),
-            self.get_vectors_dir()
+            self.get_vectors_dir(),
         ]
 
         for directory in directories:
@@ -43,36 +43,34 @@ class FileManager:
 
     def get_data_dir(self) -> Path:
         """Get the base data directory"""
-        return Path(self.config.get('data_dir', 'data'))
+        return Path(self.config.get("data_dir", "data"))
 
     def get_input_dir(self) -> Path:
         """Get the input directory"""
-        return self.get_data_dir() / self.config.get('input_dir', 'input')
+        return self.get_data_dir() / self.config.get("input_dir", "input")
 
-    def get_output_dir(self, approach: Optional[str] = None, level: Optional[int] = None) -> Path:
+    def get_output_dir(
+        self, approach: Optional[str] = None, level: Optional[int] = None
+    ) -> Path:
         """Get the output directory, optionally with subdirectories"""
-        base_output = self.get_data_dir() / self.config.get('output_dir', 'output')
+        base_output = self.get_data_dir() / self.config.get("output_dir", "output")
 
         if approach and level:
-            level_name = ['basic', 'medium', 'full'][level - 1]
+            level_name = ["basic", "medium", "full"][level - 1]
             return base_output / f"{approach}_{level_name}"
 
         return base_output
 
     def get_analysis_dir(self) -> Path:
         """Get the analysis results directory"""
-        return self.get_data_dir() / self.config.get('analysis_dir', 'analysis')
+        return self.get_data_dir() / self.config.get("analysis_dir", "analysis")
 
     def get_vectors_dir(self) -> Path:
         """Get the vectors metadata directory"""
-        return self.get_data_dir() / self.config.get('vectors_dir', 'vectors')
+        return self.get_data_dir() / self.config.get("vectors_dir", "vectors")
 
     def generate_output_path(
-        self,
-        input_file: str,
-        approach: str,
-        level: int,
-        output_format: str
+        self, input_file: str, approach: str, level: int, output_format: str
     ) -> str:
         """Generate output file path for a given input file"""
         input_path = Path(input_file)
@@ -80,14 +78,14 @@ class FileManager:
 
         # Extract chat name from JSON file
         chat_name = self._extract_chat_name(input_path)
-        
+
         # Generate filename
         extension = self._get_extension(output_format)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Clean chat name for filename
         clean_name = self._clean_filename(chat_name)
-        level_name = ['basic', 'medium', 'full'][level-1]
+        level_name = ["basic", "medium", "full"][level - 1]
 
         filename = f"{clean_name}_{approach}_{level_name}_{timestamp}{extension}"
 
@@ -126,7 +124,7 @@ class FileManager:
         # Load existing log
         if log_path.exists():
             try:
-                with open(log_path, 'r', encoding='utf-8') as f:
+                with open(log_path, "r", encoding="utf-8") as f:
                     log_data = json.load(f)
             except Exception:
                 log_data = {"entries": []}
@@ -134,17 +132,14 @@ class FileManager:
             log_data = {"entries": []}
 
         # Add new entry
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            **result
-        }
+        entry = {"timestamp": datetime.now().isoformat(), **result}
         log_data["entries"].append(entry)
 
         # Keep only last 1000 entries
         log_data["entries"] = log_data["entries"][-1000:]
 
         # Save log
-        with open(log_path, 'w', encoding='utf-8') as f:
+        with open(log_path, "w", encoding="utf-8") as f:
             json.dump(log_data, f, indent=2, ensure_ascii=False)
 
     def get_processing_history(self, limit: int = 50) -> List[Dict[str, Any]]:
@@ -155,7 +150,7 @@ class FileManager:
             return []
 
         try:
-            with open(log_path, 'r', encoding='utf-8') as f:
+            with open(log_path, "r", encoding="utf-8") as f:
                 log_data = json.load(f)
                 return log_data.get("entries", [])[-limit:]
         except Exception:
@@ -164,7 +159,6 @@ class FileManager:
     def find_similar_processed_files(self, input_file: str) -> List[Dict[str, Any]]:
         """Find previously processed versions of the same input file"""
         input_path = Path(input_file)
-        input_hash = self._calculate_file_hash(input_path)
 
         history = self.get_processing_history(200)  # Check last 200 entries
 
@@ -184,7 +178,7 @@ class FileManager:
         directories_to_clean = [
             self.get_output_dir(),
             self.get_analysis_dir(),
-            self.get_vectors_dir()
+            self.get_vectors_dir(),
         ]
 
         total_cleaned = 0
@@ -240,34 +234,31 @@ class FileManager:
 
     def _get_extension(self, output_format: str) -> str:
         """Get file extension for output format"""
-        extensions = {
-            "text": ".txt",
-            "json": ".json",
-            "markdown": ".md",
-            "csv": ".csv"
-        }
+        extensions = {"text": ".txt", "json": ".json", "markdown": ".md", "csv": ".csv"}
         return extensions.get(output_format, ".txt")
-    
+
     def _extract_chat_name(self, input_path: Path) -> str:
         """Extract chat name from Telegram JSON file"""
         try:
             import json
-            with open(input_path, 'r', encoding='utf-8') as f:
+
+            with open(input_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data.get('name', input_path.stem)
+            return data.get("name", input_path.stem)
         except Exception:
             # Fallback to filename if JSON parsing fails
             return input_path.stem
-    
+
     def _clean_filename(self, name: str) -> str:
         """Clean chat name for use in filename"""
         import re
+
         # Remove special characters except spaces, hyphens, and underscores
-        clean_name = re.sub(r'[^\w\s-]', '', name)
+        clean_name = re.sub(r"[^\w\s-]", "", name)
         # Replace spaces and multiple hyphens with single underscore
-        clean_name = re.sub(r'[-\s]+', '_', clean_name)
+        clean_name = re.sub(r"[-\s]+", "_", clean_name)
         # Remove leading/trailing underscores
-        clean_name = clean_name.strip('_')
+        clean_name = clean_name.strip("_")
         return clean_name or "unknown_chat"
 
     def _calculate_file_hash(self, file_path: Path) -> str:
@@ -282,4 +273,3 @@ class FileManager:
             return ""
 
         return hash_sha256.hexdigest()
-

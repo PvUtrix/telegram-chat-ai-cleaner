@@ -3,7 +3,7 @@ Groq provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import List, AsyncGenerator
 
 try:
     import groq

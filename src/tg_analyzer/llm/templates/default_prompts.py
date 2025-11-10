@@ -2,7 +2,7 @@
 Default prompt templates for common analysis tasks
 """
 
-from typing import Dict, Any
+from typing import Dict
 
 
 DEFAULT_PROMPTS = {
@@ -20,7 +20,6 @@ Chat Data:
 
 Please structure your response with clear headings and be concise but thorough.
 """,
-
     "sentiment_analysis": """
 Analyze the sentiment and emotional tone of this Telegram chat. Please provide:
 
@@ -35,7 +34,6 @@ Chat Data:
 
 Focus on specific examples from the conversation.
 """,
-
     "topic_modeling": """
 Identify and categorize the main topics discussed in this Telegram chat. Please:
 
@@ -50,7 +48,6 @@ Chat Data:
 
 Use clear topic labels and provide message counts for each category.
 """,
-
     "participant_analysis": """
 Analyze the participants and their roles in this Telegram chat. Please cover:
 
@@ -65,7 +62,6 @@ Chat Data:
 
 Include specific examples and quantitative data where possible.
 """,
-
     "temporal_analysis": """
 Analyze how this Telegram conversation evolves over time. Please examine:
 
@@ -80,7 +76,6 @@ Chat Data:
 
 Include timestamps and correlate with content changes.
 """,
-
     "link_resource_analysis": """
 Extract and analyze all links and resources shared in this Telegram chat:
 
@@ -95,7 +90,6 @@ Chat Data:
 
 Focus on practical, actionable resources that would be valuable to others.
 """,
-
     "action_items": """
 Extract all action items, tasks, and commitments from this Telegram chat:
 
@@ -110,7 +104,6 @@ Chat Data:
 
 Format as a clear task list with owners, deadlines, and status.
 """,
-
     "decision_making": """
 Analyze the decision-making process in this Telegram chat:
 
@@ -125,13 +118,12 @@ Chat Data:
 
 Focus on concrete outcomes and the process that led to them.
 """,
-
     "custom": """
 {user_prompt}
 
 Chat Data:
 {chat_data}
-"""
+""",
 }
 
 
@@ -190,13 +182,9 @@ def format_prompt(template: str, chat_data: str, **kwargs) -> str:
         Formatted prompt
     """
     # Create format variables
-    variables = {
-        "chat_data": chat_data,
-        **kwargs
-    }
+    variables = {"chat_data": chat_data, **kwargs}
 
     try:
         return template.format(**variables)
     except KeyError as e:
         raise ValueError(f"Missing required variable for template: {e}")
-

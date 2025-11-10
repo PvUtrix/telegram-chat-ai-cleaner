@@ -3,7 +3,7 @@ OpenRouter LLM provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import List, AsyncGenerator
 import tiktoken
 
 try:
@@ -44,8 +44,7 @@ class OpenRouterProvider(BaseLLMProvider):
                 raise ImportError("openai package is required for OpenRouter provider")
 
             self._client = AsyncOpenAI(
-                api_key=self.config.api_key,
-                base_url="https://openrouter.ai/api/v1"
+                api_key=self.config.api_key, base_url="https://openrouter.ai/api/v1"
             )
         return self._client
 
@@ -100,14 +99,14 @@ class OpenRouterProvider(BaseLLMProvider):
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": kwargs.get("temperature", self.config.temperature),
                 "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
-                "stream": True
+                "stream": True,
             }
 
             # Remove None values
             params = {k: v for k, v in params.items() if v is not None}
 
             stream = await client.chat.completions.create(**params)
-            
+
             async for chunk in stream:
                 if chunk.choices[0].delta.content is not None:
                     yield chunk.choices[0].delta.content
@@ -132,11 +131,8 @@ class OpenRouterProvider(BaseLLMProvider):
 
             # Use text-embedding-ada-002 model for embeddings
             model = kwargs.get("model", "openai/text-embedding-ada-002")
-            
-            response = await client.embeddings.create(
-                model=model,
-                input=texts
-            )
+
+            response = await client.embeddings.create(model=model, input=texts)
 
             return [embedding.embedding for embedding in response.data]
 
@@ -158,7 +154,7 @@ class OpenRouterProvider(BaseLLMProvider):
             if self._encoder is None:
                 # Use cl100k_base encoding (GPT-4 compatible)
                 self._encoder = tiktoken.get_encoding("cl100k_base")
-            
+
             return len(self._encoder.encode(text))
         except Exception as e:
             logger.warning(f"Token counting failed: {e}")
@@ -181,7 +177,7 @@ class OpenRouterProvider(BaseLLMProvider):
             "anthropic/claude-3-haiku",
             "google/gemini-pro",
             "meta-llama/llama-2-70b-chat",
-            "mistralai/mistral-7b-instruct"
+            "mistralai/mistral-7b-instruct",
         ]
 
     def estimate_cost(self, input_tokens: int, output_tokens: int) -> float:

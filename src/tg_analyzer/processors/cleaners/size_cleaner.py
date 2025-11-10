@@ -127,8 +127,15 @@ class SizeCleaner(BaseCleaner):
             entity_type = entity.get("type", "")
             entity_text = entity.get("text", "")
 
-            if entity_type == "link" and any(domain in entity_text.lower() for domain in
-                                            ['github.com', 'youtube.com', 'twitter.com', 'telegram.org']):
+            if entity_type == "link" and any(
+                domain in entity_text.lower()
+                for domain in [
+                    "github.com",
+                    "youtube.com",
+                    "twitter.com",
+                    "telegram.org",
+                ]
+            ):
                 important_links.append(entity_text)
 
         if important_links:
@@ -136,11 +143,19 @@ class SizeCleaner(BaseCleaner):
 
         return " ".join(parts)
 
-    def _clean_level_3(self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]) -> str:
+    def _clean_level_3(
+        self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]
+    ) -> str:
         """Level 3: + all media references, reactions, edits"""
         # Include more message types
         msg_type = message.get("type", "")
-        if msg_type not in ["message", "photo", "video_file", "document", "voice_message"]:
+        if msg_type not in [
+            "message",
+            "photo",
+            "video_file",
+            "document",
+            "voice_message",
+        ]:
             return ""
 
         parts = []
@@ -155,7 +170,10 @@ class SizeCleaner(BaseCleaner):
             parts.append("[EDITED]")
 
         # Add reply indicator (compact)
-        if message.get("reply_to_message_id") and message["reply_to_message_id"] in messages_dict:
+        if (
+            message.get("reply_to_message_id")
+            and message["reply_to_message_id"] in messages_dict
+        ):
             parts.append("[REPLY]")
 
         # Add sender
@@ -199,7 +217,7 @@ class SizeCleaner(BaseCleaner):
             "audio_file": "🎵",
             "document": "📄",
             "sticker": "🎭",
-            "animation": "🎬"
+            "animation": "🎬",
         }
 
         desc = descriptions.get(media_type, media_type)
@@ -220,13 +238,17 @@ class SizeCleaner(BaseCleaner):
 
         return desc
 
-    def _get_top_reactions(self, reactions: List[Dict[str, Any]], limit: int = 3) -> str:
+    def _get_top_reactions(
+        self, reactions: List[Dict[str, Any]], limit: int = 3
+    ) -> str:
         """Get top reactions as compact string"""
         if not reactions:
             return ""
 
         # Sort by count
-        sorted_reactions = sorted(reactions, key=lambda r: r.get("count", 0), reverse=True)
+        sorted_reactions = sorted(
+            reactions, key=lambda r: r.get("count", 0), reverse=True
+        )
 
         top_reactions = []
         for reaction in sorted_reactions[:limit]:
@@ -267,4 +289,3 @@ class SizeCleaner(BaseCleaner):
                 parts.append(f"{count} {entity_type}")
 
         return ", ".join(parts)
-

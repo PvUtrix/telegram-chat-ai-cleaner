@@ -3,7 +3,7 @@ Base cleaner class and factory functions
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any
 from ..telegram_parser import ChatInfo
 
 
@@ -54,14 +54,21 @@ class BaseCleaner(ABC):
 
         return " ".join(parts) if parts else ""
 
-    def _format_message_with_reply(self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]) -> str:
+    def _format_message_with_reply(
+        self, message: Dict[str, Any], messages_dict: Dict[int, Dict[str, Any]]
+    ) -> str:
         """Format message with reply context"""
         parts = []
 
         # Add reply indicator
-        if message.get("reply_to_message_id") and message["reply_to_message_id"] in messages_dict:
+        if (
+            message.get("reply_to_message_id")
+            and message["reply_to_message_id"] in messages_dict
+        ):
             reply_to = messages_dict[message["reply_to_message_id"]]
-            reply_sender = reply_to.get("from_user") or reply_to.get("from_id") or "Unknown"
+            reply_sender = (
+                reply_to.get("from_user") or reply_to.get("from_id") or "Unknown"
+            )
             reply_text = reply_to.get("text", "")[:100]  # Truncate long replies
             if reply_text:
                 parts.append(f"[Replying to {reply_sender}: {reply_text}]")
@@ -89,7 +96,9 @@ def get_cleaner(approach: str, level: int) -> BaseCleaner:
         ValueError: If approach or level is invalid
     """
     if approach not in ["privacy", "size", "context"]:
-        raise ValueError(f"Invalid approach: {approach}. Must be 'privacy', 'size', or 'context'")
+        raise ValueError(
+            f"Invalid approach: {approach}. Must be 'privacy', 'size', or 'context'"
+        )
 
     if level not in [1, 2, 3]:
         raise ValueError(f"Invalid level: {level}. Must be 1, 2, or 3")
@@ -97,13 +106,15 @@ def get_cleaner(approach: str, level: int) -> BaseCleaner:
     # Import here to avoid circular imports
     if approach == "privacy":
         from .privacy_cleaner import PrivacyCleaner
+
         return PrivacyCleaner(level)
     elif approach == "size":
         from .size_cleaner import SizeCleaner
+
         return SizeCleaner(level)
     elif approach == "context":
         from .context_cleaner import ContextCleaner
+
         return ContextCleaner(level)
 
     raise ValueError(f"Unknown cleaner approach: {approach}")
-

@@ -3,7 +3,7 @@ Anthropic Claude provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import List, AsyncGenerator
 import tiktoken
 
 try:
@@ -40,7 +40,9 @@ class AnthropicProvider(BaseLLMProvider):
         """Get or create Anthropic client"""
         if self._client is None:
             if AsyncAnthropic is None:
-                raise ImportError("anthropic package is required for Anthropic provider")
+                raise ImportError(
+                    "anthropic package is required for Anthropic provider"
+                )
 
             self._client = AsyncAnthropic(api_key=self.config.api_key)
         return self._client

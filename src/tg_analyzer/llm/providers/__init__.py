@@ -17,6 +17,5 @@ __all__ = [
     "GoogleProvider",
     "GroqProvider",
     "OllamaProvider",
-    "OpenRouterProvider"
+    "OpenRouterProvider",
 ]
-

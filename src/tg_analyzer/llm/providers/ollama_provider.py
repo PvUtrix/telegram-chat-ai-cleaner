@@ -3,7 +3,7 @@ Ollama local LLM provider
 """
 
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
+from typing import Dict, Any, List, AsyncGenerator
 import aiohttp
 import json
 
@@ -34,7 +34,9 @@ class OllamaProvider(BaseLLMProvider):
             self._session = aiohttp.ClientSession()
         return self._session
 
-    async def _make_request(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _make_request(
+        self, endpoint: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Make HTTP request to Ollama API"""
         session = await self._get_session()
         url = f"{self._base_url}/{endpoint}"
@@ -65,11 +67,13 @@ class OllamaProvider(BaseLLMProvider):
                 "options": {
                     "temperature": kwargs.get("temperature", self.config.temperature),
                     "num_predict": kwargs.get("max_tokens", self.config.max_tokens),
-                }
+                },
             }
 
             # Remove None values from options
-            data["options"] = {k: v for k, v in data["options"].items() if v is not None}
+            data["options"] = {
+                k: v for k, v in data["options"].items() if v is not None
+            }
 
             response = await self._make_request("api/generate", data)
             return response.get("response", "")
@@ -100,19 +104,23 @@ class OllamaProvider(BaseLLMProvider):
                 "options": {
                     "temperature": kwargs.get("temperature", self.config.temperature),
                     "num_predict": kwargs.get("max_tokens", self.config.max_tokens),
-                }
+                },
             }
 
             # Remove None values from options
-            data["options"] = {k: v for k, v in data["options"].items() if v is not None}
+            data["options"] = {
+                k: v for k, v in data["options"].items() if v is not None
+            }
 
             async with session.post(url, json=data) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise Exception(f"Ollama API error: {response.status} - {error_text}")
+                    raise Exception(
+                        f"Ollama API error: {response.status} - {error_text}"
+                    )
 
                 async for line in response.content:
-                    line = line.decode('utf-8').strip()
+                    line = line.decode("utf-8").strip()
                     if line:
                         try:
                             chunk = json.loads(line)
