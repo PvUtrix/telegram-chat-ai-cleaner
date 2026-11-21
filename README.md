@@ -18,8 +18,8 @@ An open-source tool for cleaning, analyzing, and vectorizing Telegram chat expor
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/telegram-chat-analyzer.git
-cd telegram-chat-analyzer
+git clone https://github.com/PvUtrix/telegram-chat-ai-cleaner.git
+cd telegram-chat-ai-cleaner
 
 # Install dependencies
 pip install -r requirements.txt
@@ -45,6 +45,14 @@ tg-analyzer clean data/input/your_chat.json --approach privacy --level 2
 # Create embeddings for vector search
 tg-analyzer vectorize data/input/your_chat.json
 ```
+
+Cleaned output over 1 MB is split into 1 MB parts (`*_part001.txt`, ...);
+`clean` asks first, batch, web and analysis runs split without asking.
+
+### macOS Finder service
+
+`macos/Clean Telegram Chat.workflow` cleans an export from Finder's
+right-click menu. Install steps and troubleshooting: [macos/README.md](macos/README.md).
 
 ## Data Directory Structure
 
@@ -198,8 +206,8 @@ The easiest way to run Telegram Chat Analyzer is using Docker. We've provided se
 
 ```bash
 # 1. Clone and enter the directory
-git clone <repository-url>
-cd telegram-chat-analyzer
+git clone https://github.com/PvUtrix/telegram-chat-ai-cleaner.git
+cd telegram-chat-ai-cleaner
 
 # 2. Configure your API keys
 cp env.example .env
@@ -219,8 +227,8 @@ cp env.example .env
 
 ```bash
 # 1. Clone and enter the directory
-git clone <repository-url>
-cd telegram-chat-analyzer
+git clone https://github.com/PvUtrix/telegram-chat-ai-cleaner.git
+cd telegram-chat-ai-cleaner
 
 # 2. Configure your API keys
 cp env.example .env
@@ -388,6 +396,6 @@ MIT License - see LICENSE file for details.
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/yourusername/telegram-chat-analyzer/issues)
-- Discussions: [GitHub Discussions](https://github.com/yourusername/telegram-chat-analyzer/discussions)
-- Documentation: [Wiki](https://github.com/yourusername/telegram-chat-analyzer/wiki)
+- Issues: [GitHub Issues](https://github.com/PvUtrix/telegram-chat-ai-cleaner/issues)
+- Discussions: [GitHub Discussions](https://github.com/PvUtrix/telegram-chat-ai-cleaner/discussions)
+- Documentation: [Wiki](https://github.com/PvUtrix/telegram-chat-ai-cleaner/wiki)

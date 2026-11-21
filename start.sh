@@ -127,11 +127,21 @@ show_usage() {
     print_info "Example: source venv/bin/activate && tg-analyzer clean --interactive"
 }
 
+# Check if package is installed
+check_install() {
+    if ! pip show telegram-chat-analyzer > /dev/null 2>&1; then
+        print_warning "Package not installed. Installing dependencies..."
+        pip install -e .
+        print_success "Dependencies installed"
+    fi
+}
+
 # Main function
 main() {
     check_directory
     check_venv
     activate_venv
+    check_install
 
     # If no arguments provided, show usage
     if [ $# -eq 0 ]; then
