@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AMApplicationBuild</key>
+	<string>523</string>
+	<key>AMApplicationVersion</key>
+	<string>2.10</string>
+	<key>AMDocumentVersion</key>
+	<string>2</string>
+	<key>actions</key>
+	<array>
+		<dict>
+			<key>action</key>
+			<dict>
+				<key>AMAccepts</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Optional</key>
+					<true/>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.string</string>
+					</array>
+				</dict>
+				<key>AMActionVersion</key>
+				<string>2.0.3</string>
+				<key>AMApplication</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>AMParameterProperties</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<dict/>
+					<key>CheckedForUserDefaultShell</key>
+					<dict/>
+					<key>inputMethod</key>
+					<dict/>
+					<key>shell</key>
+					<dict/>
+					<key>source</key>
+					<dict/>
+				</dict>
+				<key>AMProvides</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.string</string>
+					</array>
+				</dict>
+				<key>ActionBundlePath</key>
+				<string>/System/Library/Automator/Run Shell Script.action</string>
+				<key>ActionName</key>
+				<string>Run Shell Script</string>
+				<key>ActionParameters</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<string># Shows a dialog: title, message, buttons (comma-separated). Prints the button pressed.
+dialog() {
+    osascript -e 'on run argv' \
+        -e 'set AppleScript'"'"'s text item delimiters to ","' \
+        -e 'set btns to text items of (item 3 of argv)' \
+        -e 'set r to display alert (item 1 of argv) message (item 2 of argv) buttons btns default button (count of btns)' \
+        -e 'return button returned of r' \
+        -e 'end run' "$1" "$2" "$3"
+}
+
+TOOL="/Users/PvUtrix_1/Apps/_Tools/telegram_chat_analyzer"
+cd "$TOOL" || { dialog "Clean Telegram Chat failed" "Tool folder not found: $TOOL" "OK"; exit 0; }
+
+BIN="venv/bin/tg-analyzer"
+if [ ! -x "$BIN" ]; then
+    dialog "Clean Telegram Chat failed" "The analyzer's virtual environment is missing ($BIN). Rebuild it with Python 3.12 and install requirements.txt." "OK"
+    exit 0
+fi
+
+LOG=/tmp/tg_clean_log.txt
+
+# Runs the cleaner on $1, writing to $2, answering the split question with $3 (y or n).
+run_clean() {
+    printf '%s\n' "$3" | "$BIN" clean "$1" --approach privacy --level 2 --format text --output "$2" &gt; "$LOG" 2&gt;&amp;1
+}
+
+for file in "$@"; do
+    OUT_DIR="$(dirname "$file")"
+    BASE_NAME="$(basename "$file" .json)"
+    OUT_FILE="${OUT_DIR}/${BASE_NAME}_cleaned.txt"
+
+    # First pass keeps one file; the tool renames the export, so remember its new path.
+    run_clean "$file" "$OUT_FILE" n
+    STATUS=$?
+    RENAMED=$(sed -n 's/^.*Parsed [0-9]* messages from //p' "$LOG" | head -1)
+    [ -n "$RENAMED" ] &amp;&amp; [ -f "$RENAMED" ] || RENAMED="$file"
+    RESULT_MSG="Saved to:
+$OUT_FILE"
+
+    if [ $STATUS -eq 0 ] &amp;&amp; grep -q "File size warning" "$LOG"; then
+        SIZE=$(sed -n 's/^.*Output file would be \([0-9.]* MB\).*$/\1/p' "$LOG" | head -1)
+        CHOICE=$(dialog "Cleaned chat is large" "The cleaned text is ${SIZE:-over 1 MB}, over the 1 MB limit.
+
+Split it into 1 MB parts, or keep one file?" "Keep One File,Split into Parts")
+        if [ "$CHOICE" = "Split into Parts" ]; then
+            run_clean "$RENAMED" "$OUT_FILE" y
+            STATUS=$?
+            PARTS=$(ls "${OUT_DIR}/${BASE_NAME}_cleaned_part"*.txt 2&gt;/dev/null | wc -l | tr -d ' ')
+            if [ $STATUS -eq 0 ] &amp;&amp; [ "$PARTS" -gt 0 ]; then
+                rm -f "$OUT_FILE"
+                OUT_FILE=$(ls "${OUT_DIR}/${BASE_NAME}_cleaned_part"*.txt | head -1)
+                RESULT_MSG="Split into $PARTS parts in:
+$OUT_DIR"
+            else
+                STATUS=1
+            fi
+        fi
+    fi
+
+    if [ $STATUS -eq 0 ] &amp;&amp; [ -s "$OUT_FILE" ]; then
+        BTN=$(dialog "Chat cleaned" "$RESULT_MSG" "Show in Finder,OK")
+        [ "$BTN" = "Show in Finder" ] &amp;&amp; open -R "$OUT_FILE"
+    else
+        DETAILS=$(grep -v -E "FutureWarning|generativeai|google\.genai|See README|warnings\.warn|^[[:space:]]*$" "$LOG" | tail -6)
+        BTN=$(dialog "Clean Telegram Chat failed" "$(basename "$file") (exit code $STATUS)
+
+$DETAILS
+
+Full log: $LOG" "Open Log,OK")
+        [ "$BTN" = "Open Log" ] &amp;&amp; open -e "$LOG"
+    fi
+done
+
+exit 0</string>
+					<key>CheckedForUserDefaultShell</key>
+					<true/>
+					<key>inputMethod</key>
+					<integer>1</integer>
+					<key>shell</key>
+					<string>/bin/bash</string>
+					<key>source</key>
+					<string></string>
+				</dict>
+				<key>BundleIdentifier</key>
+				<string>com.apple.RunShellScript</string>
+				<key>CFBundleVersion</key>
+				<string>2.0.3</string>
+				<key>CanShowSelectedItemsWhenRun</key>
+				<false/>
+				<key>CanShowWhenRun</key>
+				<true/>
+				<key>Category</key>
+				<array>
+					<string>AMCategoryUtilities</string>
+				</array>
+				<key>Class Name</key>
+				<string>RunShellScriptAction</string>
+				<key>InputUUID</key>
+				<string>05FC6F0D-9E7E-4F46-9A95-B33A1C8DFE98</string>
+				<key>Keywords</key>
+				<array>
+					<string>Shell</string>
+					<string>Script</string>
+					<string>Command</string>
+					<string>Run</string>
+					<string>Unix</string>
+				</array>
+				<key>OutputUUID</key>
+				<string>19315A58-ED19-466B-9075-DA6151AB78A7</string>
+				<key>UUID</key>
+				<string>10437A83-035F-47FE-99EC-B5DBDDAFB1AB</string>
+				<key>UnlocalizedApplications</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>arguments</key>
+				<dict>
+					<key>0</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>inputMethod</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>0</string>
+					</dict>
+					<key>1</key>
+					<dict>
+						<key>default value</key>
+						<false/>
+						<key>name</key>
+						<string>CheckedForUserDefaultShell</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>1</string>
+					</dict>
+					<key>2</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>source</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>2</string>
+					</dict>
+					<key>3</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>COMMAND_STRING</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>3</string>
+					</dict>
+					<key>4</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>shell</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>4</string>
+					</dict>
+				</dict>
+				<key>isViewVisible</key>
+				<integer>1</integer>
+				<key>location</key>
+				<string>309.000000:253.000000</string>
+				<key>nibPath</key>
+				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
+			</dict>
+			<key>isViewVisible</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>connectors</key>
+	<dict/>
+	<key>workflowMetaData</key>
+	<dict>
+		<key>serviceApplicationBundleID</key>
+		<string>com.apple.finder</string>
+		<key>serviceApplicationPath</key>
+		<string>/System/Library/CoreServices/Finder.app</string>
+		<key>serviceInputTypeIdentifier</key>
+		<string>com.apple.Automator.fileSystemObject</string>
+		<key>serviceOutputTypeIdentifier</key>
+		<string>com.apple.Automator.nothing</string>
+		<key>serviceProcessesInput</key>
+		<integer>0</integer>
+		<key>workflowTypeIdentifier</key>
+		<string>com.apple.Automator.servicesMenu</string>
+	</dict>
+</dict>
+</plist>
