@@ -17,6 +17,7 @@ from ...core import TelegramAnalyzer
 from ...config.config_manager import ConfigManager
 from ...processors.batch_processor import BatchProcessor
 from ...processors.file_manager import FileManager
+from ...processors.file_splitter import split_file_if_needed
 
 
 # Configure logging
@@ -221,12 +222,22 @@ async def clean_file(filename: str, options: CleanRequest):
         )
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(cleaned_data)
+        
+        # Check if file is over 1MB and split if needed
+        was_split, output_files = split_file_if_needed(
+            output_path,
+            cleaned_data,
+            max_size=1024 * 1024,  # 1MB
+            interactive=False  # Web interface: auto-split without prompting
+        )
+        
+        primary_output = output_files[0] if output_files else output_path
 
         return {
             "input_file": filename,
-            "output_file": output_path,
+            "output_file": primary_output,
+            "output_files": output_files if was_split else [output_path],
+            "was_split": was_split,
             "approach": options.approach,
             "level": options.level,
             "format": options.output_format,
@@ -440,13 +451,23 @@ async def process_file_background(file_path: str, options: Dict[str, Any]):
         )
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(cleaned_data)
-
+        
+        # Check if file is over 1MB and split if needed
+        was_split, output_files = split_file_if_needed(
+            output_path,
+            cleaned_data,
+            max_size=1024 * 1024,  # 1MB
+            interactive=False  # Web interface: auto-split without prompting
+        )
+        
+        primary_output = output_files[0] if output_files else output_path
+        
         await manager.broadcast({
             "type": "processing_completed",
             "file": file_path,
-            "output": output_path,
+            "output": primary_output,
+            "outputs": output_files if was_split else [output_path],
+            "was_split": was_split,
             "size": len(cleaned_data)
         })
 

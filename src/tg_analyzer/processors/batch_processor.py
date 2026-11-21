@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..core import TelegramAnalyzer
 from ..config.models import ProcessingResult, BatchProcessingResult
 from .file_manager import FileManager
+from .file_splitter import split_file_if_needed
 
 
 logger = logging.getLogger(__name__)
@@ -159,11 +160,20 @@ class BatchProcessor:
             # Ensure output directory exists
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
-            # Save result
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.write(cleaned_data)
-
-            logger.info(f"Successfully processed: {input_file} -> {output_file}")
+            # Save result (check if file is over 1MB and split if needed)
+            was_split, output_files = split_file_if_needed(
+                str(output_file),
+                cleaned_data,
+                max_size=1024 * 1024,  # 1MB
+                interactive=False  # Batch processing: auto-split without prompting
+            )
+            
+            if was_split:
+                logger.info(f"Successfully processed and split: {input_file} -> {len(output_files)} files")
+                # Use first split file as the primary output for metadata
+                output_file = Path(output_files[0])
+            else:
+                logger.info(f"Successfully processed: {input_file} -> {output_file}")
 
             return ProcessingResult(
                 success=True,

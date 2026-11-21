@@ -19,6 +19,7 @@ from ..config.config_manager import ConfigManager
 from ..llm.templates.default_prompts import list_available_templates, get_prompt_template
 from ..processors.batch_processor import BatchProcessor
 from ..processors.file_manager import FileManager
+from ..processors.file_splitter import split_file_if_needed
 
 
 # Initialize Rich console for beautiful output
@@ -384,11 +385,23 @@ def clean(input_file, approach, level, output_format, output_file, batch, intera
 
         # Save result
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(cleaned_data)
-
-        console.print(f"[green]✅ Cleaned data saved to:[/green] {output_file}")
-        console.print(f"[dim]Size: {len(cleaned_data)} characters[/dim]")
+        
+        # Check if file is over 1MB and offer to split
+        was_split, output_files = split_file_if_needed(
+            output_file,
+            cleaned_data,
+            max_size=1024 * 1024,  # 1MB
+            interactive=True
+        )
+        
+        if was_split:
+            console.print(f"[green]✅ File split into {len(output_files)} parts:[/green]")
+            for i, split_file in enumerate(output_files, 1):
+                file_size = Path(split_file).stat().st_size / (1024 * 1024)
+                console.print(f"  {i}. {Path(split_file).name} ({file_size:.2f} MB)")
+        else:
+            console.print(f"[green]✅ Cleaned data saved to:[/green] {output_file}")
+            console.print(f"[dim]Size: {len(cleaned_data)} characters[/dim]")
 
 
 @cli.command()

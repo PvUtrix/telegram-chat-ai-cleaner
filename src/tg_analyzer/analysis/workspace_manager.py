@@ -10,6 +10,7 @@ from datetime import datetime
 import shutil
 
 from ..config.config_manager import ConfigManager
+from ..processors.file_splitter import split_file_if_needed
 
 
 logger = logging.getLogger(__name__)
@@ -141,12 +142,21 @@ class WorkspaceManager:
         filename = f"{template_name}_{timestamp}{ext}"
         result_path = results_dir / filename
         
-        # Save result
-        with open(result_path, 'w', encoding='utf-8') as f:
-            f.write(result)
+        # Save result (check if file is over 1MB and split if needed)
+        was_split, output_files = split_file_if_needed(
+            str(result_path),
+            result,
+            max_size=1024 * 1024,  # 1MB
+            interactive=False  # Analysis results: auto-split without prompting
+        )
         
-        logger.info(f"Saved result: {result_path}")
-        return str(result_path)
+        if was_split:
+            logger.info(f"Saved result (split into {len(output_files)} files): {result_path}")
+            # Return first file path (primary output)
+            return output_files[0]
+        else:
+            logger.info(f"Saved result: {result_path}")
+            return str(result_path)
 
     def list_workspaces(self) -> list[Dict[str, Any]]:
         """
