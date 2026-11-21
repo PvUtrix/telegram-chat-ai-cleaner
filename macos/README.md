@@ -31,8 +31,12 @@ cd /Users/PvUtrix_1/Apps/_Tools/telegram_chat_analyzer
 /opt/homebrew/opt/python@3.12/bin/python3.12 -m venv venv
 venv/bin/pip install -e .
 venv/bin/pip install -r requirements.txt
-cp -R "macos/Clean Telegram Chat.workflow" ~/Library/Services/
+ln -s "$PWD/macos/Clean Telegram Chat.workflow" ~/Library/Services/
+/System/Library/CoreServices/pbs -update
 ```
+
+The service is a symlink to this repository, so the committed copy is the
+one that runs: edit it here and commit; there is nothing to copy back.
 
 `requirements.txt` is required: `setup.py` does not list every runtime
 dependency (for example `aiohttp`), and without it the CLI fails on import.
@@ -45,5 +49,5 @@ dependency (for example `aiohttp`), and without it the CLI fails on import.
   Python it was installed with. The service only uses `venv/bin/tg-analyzer`.
 - **Edit the script**: open the workflow in Automator, or replace
   `actions.0.action.ActionParameters.COMMAND_STRING` in
-  `Contents/document.wflow` with `plutil -replace`, then copy it back to
-  `~/Library/Services/`.
+  `Contents/document.wflow` with `plutil -replace`. Automator saves through
+  the symlink into this repository; commit the change.
