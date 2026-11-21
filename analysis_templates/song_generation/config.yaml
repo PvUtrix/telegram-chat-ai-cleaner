@@ -1,0 +1,13 @@
+name: song_generation
+description: Generate a song based on the chat content, themes, participants, and sentiment
+version: "1.0.0"
+author: "Telegram Chat Analyzer"
+tags: ["song", "creative", "music", "poetry", "artistic"]
+
+# LLM Configuration for this template
+llm_config:
+  model: "gpt-4-turbo"  # Good for creative content
+  temperature: 0.9  # Higher creativity for song writing
+  max_tokens: 3000  # Enough for a full song
+  provider: "openai"
+
