@@ -15,6 +15,12 @@ except ImportError:
 
 from .base_provider import BaseLLMProvider
 from ...config.models import LLMConfig
+from ...constants import (
+    OPENAI_EMBEDDING_BATCH_SIZE,
+    MODEL_PRICING,
+    MODEL_CONTEXT_LENGTHS,
+    CHARS_PER_TOKEN_ESTIMATE
+)
 
 
 logger = logging.getLogger(__name__)
@@ -132,11 +138,10 @@ class OpenAIProvider(BaseLLMProvider):
             model = kwargs.get("model", "text-embedding-3-small")
 
             # OpenAI has a limit on batch size
-            batch_size = 100
             all_embeddings = []
 
-            for i in range(0, len(texts), batch_size):
-                batch = texts[i:i + batch_size]
+            for i in range(0, len(texts), OPENAI_EMBEDDING_BATCH_SIZE):
+                batch = texts[i:i + OPENAI_EMBEDDING_BATCH_SIZE]
 
                 response = await client.embeddings.create(
                     input=batch,
@@ -161,21 +166,12 @@ class OpenAIProvider(BaseLLMProvider):
             return len(self._encoder.encode(text))
         except Exception:
             # Fallback: rough character-based estimation
-            return len(text) // 4
+            return len(text) // CHARS_PER_TOKEN_ESTIMATE
 
     def get_max_tokens(self) -> int:
         """Get maximum context length"""
-        model_limits = {
-            "gpt-4": 8192,
-            "gpt-4-32k": 32768,
-            "gpt-4-turbo": 128000,
-            "gpt-4-turbo-preview": 128000,
-            "gpt-3.5-turbo": 4096,
-            "gpt-3.5-turbo-16k": 16384,
-        }
-
         model = self.config.model or "gpt-4"
-        return model_limits.get(model, 4096)
+        return MODEL_CONTEXT_LENGTHS.get(model, 4096)
 
     def get_models(self) -> List[str]:
         """Get available OpenAI models"""
@@ -191,15 +187,7 @@ class OpenAIProvider(BaseLLMProvider):
     def estimate_cost(self, input_tokens: int, output_tokens: int = 0) -> float:
         """Estimate OpenAI API cost"""
         model = self.config.model or "gpt-4"
-
-        # Pricing per 1K tokens (as of 2024)
-        pricing = {
-            "gpt-4": {"input": 0.03, "output": 0.06},
-            "gpt-4-turbo": {"input": 0.01, "output": 0.03},
-            "gpt-3.5-turbo": {"input": 0.0015, "output": 0.002},
-        }
-
-        rates = pricing.get(model, pricing["gpt-4"])
+        rates = MODEL_PRICING.get(model, MODEL_PRICING["gpt-4"])
 
         input_cost = (input_tokens / 1000) * rates["input"]
         output_cost = (output_tokens / 1000) * rates["output"]

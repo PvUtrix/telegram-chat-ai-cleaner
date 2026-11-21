@@ -62,7 +62,7 @@ class LLMManager:
             },
             "openrouter": {
                 "api_key": config.get("openrouter_api_key"),
-                "model": config.get("default_llm_model", "openai/gpt-4"),
+                "model": config.get("default_llm_model", "openai/gpt-4-turbo-preview"),
             },
         }
 

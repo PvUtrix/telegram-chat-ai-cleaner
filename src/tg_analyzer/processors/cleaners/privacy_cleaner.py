@@ -8,6 +8,7 @@ import hashlib
 from typing import Dict, Any, List
 from ..telegram_parser import ChatInfo
 from .base_cleaner import BaseCleaner
+from ...constants import REPLY_TEXT_PREVIEW_LENGTH, ANONYMIZED_USER_ID_LENGTH
 
 
 class PrivacyCleaner(BaseCleaner):
@@ -96,7 +97,7 @@ class PrivacyCleaner(BaseCleaner):
         if message.get("reply_to_message_id") and message["reply_to_message_id"] in messages_dict:
             reply_to = messages_dict[message["reply_to_message_id"]]
             reply_sender = reply_to.get("from_user") or self._anonymize_user_id(reply_to.get("from_id", ""))
-            reply_text = reply_to.get("text", "")[:50]  # Truncate
+            reply_text = reply_to.get("text", "")[:REPLY_TEXT_PREVIEW_LENGTH]  # Truncate for preview
             if reply_text:
                 parts.append(f"[Reply to {reply_sender}: {reply_text}...]")
 
@@ -179,14 +180,14 @@ class PrivacyCleaner(BaseCleaner):
         return " ".join(parts)
 
     def _anonymize_user_id(self, user_id: str) -> str:
-        """Create anonymized user identifier"""
+        """Create anonymized user identifier using secure SHA-256 hashing"""
         if not user_id:
             return "Anonymous"
 
         if user_id not in self.user_mapping:
-            # Create hash-based anonymized ID
-            hash_obj = hashlib.md5(user_id.encode())
-            short_hash = hash_obj.hexdigest()[:8]
+            # Create hash-based anonymized ID using SHA-256 for security
+            hash_obj = hashlib.sha256(user_id.encode())
+            short_hash = hash_obj.hexdigest()[:ANONYMIZED_USER_ID_LENGTH]
             self.user_mapping[user_id] = f"User_{short_hash}"
 
         return self.user_mapping[user_id]
